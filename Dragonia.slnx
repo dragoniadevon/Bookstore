@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="BookApi/BookApi.csproj" />
+  <Project Path="BookWebClient/BookWebClient.csproj" Id="bd381543-2968-4882-be3e-0286e8b500f5" />
 </Solution>
