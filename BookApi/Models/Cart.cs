@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using Bookstore.Api.Models.Base;
+using System.Collections;
 
 namespace BookApi.Entity
 {

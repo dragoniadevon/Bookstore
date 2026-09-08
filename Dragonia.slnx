@@ -1,4 +1,10 @@
 <Solution>
-  <Project Path="BookApi/BookApi.csproj" />
-  <Project Path="BookWebClient/BookWebClient.csproj" Id="bd381543-2968-4882-be3e-0286e8b500f5" />
+  <Folder Name="/Элементы решения/">
+    <File Path="README.md" />
+    <File Path="TODO.md" />
+  </Folder>
+  <Project Path="BookApi/Bookstore.Api.csproj" />
+  <Project Path="Bookstore.Logger/Bookstore.Logger.csproj" Id="ffdabcc4-540a-4cc7-8836-65dddccbe7b9" />
+  <Project Path="Bookstore.Notyfiler/Bookstore.Notyfiler.csproj" Id="efb041a9-1164-4fd7-95ca-760a632f84ff" />
+  <Project Path="BookWebClient/Bookstore.WebClient.csproj" Id="bd381543-2968-4882-be3e-0286e8b500f5" />
 </Solution>

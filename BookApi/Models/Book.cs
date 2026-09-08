@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Bookstore.Api.Models.Base;
+using System.ComponentModel.DataAnnotations;
 
 namespace BookApi.Entity
 {
