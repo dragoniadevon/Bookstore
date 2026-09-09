@@ -1,7 +1,7 @@
 ﻿using Bookstore.Api.Models.Base;
 using System.ComponentModel.DataAnnotations;
 
-namespace BookApi.Entity
+namespace Bookstore.Api.Models
 {
     // Сущность Author представляет автора книги.
     //

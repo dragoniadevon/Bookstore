@@ -8,7 +8,7 @@
     // IRepository<Book>   — репозиторий книг
     //
     // where T : class означает, что T должен быть ссылочным типом.
-    public interface IRepository<T> where T : class
+    public interface IBaseRepository<T> where T : class
     {
         // Получить одну сущность по её Id.
         //

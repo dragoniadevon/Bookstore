@@ -1,5 +1,5 @@
-﻿using BookApi.Entity;
-using Bookstore.Api.Data;
+﻿using Bookstore.Api.Data;
+using Bookstore.Api.Models;
 using Bookstore.Api.Repositories.Interface;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,7 +7,7 @@ namespace Bookstore.Api.Repositories
 {
     // Репозиторий отвечает за работу с сущностью Author в базе данных.
     // Здесь находятся операции создания, получения, изменения и удаления авторов.
-    internal class AuthorRepository : IRepository<Author>
+    internal class AuthorRepository : IBaseRepository<Author>
     {
         // AppDbContext — основной объект EF Core, через который мы взаимодействуем с БД.
         private readonly AppDbContext _dbContext;

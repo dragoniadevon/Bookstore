@@ -1,6 +1,6 @@
 ﻿using Bookstore.Api.Models.Base;
 
-namespace BookApi.Entity
+namespace Bookstore.Api.Models
 {
     public class Genre : BaseEntity
     {

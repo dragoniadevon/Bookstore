@@ -1,11 +1,10 @@
 ﻿using Bookstore.Api.Models.Base;
-using System.Collections;
 
-namespace BookApi.Entity
+namespace Bookstore.Api.Models
 {
     public class Cart : BaseEntity
     {
-        public IEnumerable<Book> Books { get; set; }
+        public IEnumerable<Book>? Books { get; set; }
 
 
     
