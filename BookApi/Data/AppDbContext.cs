@@ -86,6 +86,7 @@ namespace Bookstore.Api.Data
                 {
                    
                     Name = "Author",
+                    Id = 1
                 }
             );
 
