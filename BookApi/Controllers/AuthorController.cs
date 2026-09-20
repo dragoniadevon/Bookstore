@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Bookstore.Api.Controllers
 {
     [ApiController]
-    [Route("api/Author")]
+    [Route("api/[controller]")]
     public class AuthorController : Controller
     {
         IBaseService<AuthorDTO> _authorService;
@@ -14,20 +14,17 @@ namespace Bookstore.Api.Controllers
             this._authorService = _authorService;
         }
 
-
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
             return Ok(await _authorService.GetAllAsync());
         }
 
-        [HttpGet]
+        [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
             return Ok(await _authorService.GetByIdAsync(id));
         }
-
-
 
     }
 }

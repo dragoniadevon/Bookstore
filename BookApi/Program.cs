@@ -90,7 +90,8 @@ public partial class Program
         //
         // Используется для описания API и документации
         // доступных HTTP endpoints.
-        builder.Services.AddOpenApi();
+        //builder.Services.AddOpenApi();
+        builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
 
         // ============================================================
@@ -112,7 +113,7 @@ public partial class Program
         // чтобы можно было просматривать описание API.
         if (app.Environment.IsDevelopment())
         {
-            app.MapOpenApi();
+            //app.MapOpenApi();
 
             app.UseSwagger();
             app.UseSwaggerUI();
