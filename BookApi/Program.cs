@@ -1,8 +1,11 @@
 using Bookstore.Api;
 using Bookstore.Api.Data;
 using Bookstore.Api.Models;
+using Bookstore.Api.Models.DTO;
 using Bookstore.Api.Repositories;
 using Bookstore.Api.Repositories.Interface;
+using Bookstore.Api.Services;
+using Bookstore.Api.Services.Interface;
 using Microsoft.EntityFrameworkCore;
 
 public partial class Program
@@ -14,7 +17,7 @@ public partial class Program
         // Через builder мы регистрируем все необходимые сервисы
         // и настраиваем наше ASP.NET Core приложение.
         var builder = WebApplication.CreateBuilder(args);
-
+         
 
         // ============================================================
         //                  REGISTRATION OF SERVICES
@@ -72,7 +75,9 @@ public partial class Program
         // Scoped означает, что в рамках одного HTTP-запроса
         // будет использоваться один экземпляр этого сервиса.
         builder.Services.AddScoped<IBaseRepository<Author>, AuthorRepository>();
+        builder.Services.AddEndpointsApiExplorer();
 
+        builder.Services.AddScoped<IBaseService<AuthorDTO>, AuthorService>();
 
         // Добавляем поддержку Controllers.
         //
@@ -86,7 +91,7 @@ public partial class Program
         // Используется для описания API и документации
         // доступных HTTP endpoints.
         builder.Services.AddOpenApi();
-
+        builder.Services.AddSwaggerGen();
 
         // ============================================================
         //                  BUILD APPLICATION
@@ -108,6 +113,9 @@ public partial class Program
         if (app.Environment.IsDevelopment())
         {
             app.MapOpenApi();
+
+            app.UseSwagger();
+            app.UseSwaggerUI();
         }
 
 

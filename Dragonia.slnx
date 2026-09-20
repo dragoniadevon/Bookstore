@@ -1,8 +1,4 @@
 <Solution>
-  <Folder Name="/Элементы решения/">
-    <File Path="README.md" />
-    <File Path="TODO.md" />
-  </Folder>
   <Project Path="BookApi/Bookstore.Api.csproj" />
   <Project Path="Bookstore.Logger/Bookstore.Logger.csproj" Id="ffdabcc4-540a-4cc7-8836-65dddccbe7b9" />
   <Project Path="Bookstore.Notyfiler/Bookstore.Notyfiler.csproj" Id="efb041a9-1164-4fd7-95ca-760a632f84ff" />

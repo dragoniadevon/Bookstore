@@ -1,5 +1,4 @@
 ﻿using Bookstore.Api.Models.Base;
-using System.ComponentModel.DataAnnotations;
 
 namespace Bookstore.Api.Models
 {
@@ -13,13 +12,6 @@ namespace Bookstore.Api.Models
     // то Author также будет иметь эти свойства.
     public class Author : BaseEntity
     {
-        // [Required] указывает, что поле Name обязательно.
-        // EF Core создаст соответствующее ограничение в базе данных.
-        //
-        // [MaxLength(100)] ограничивает максимальную длину имени
-        // до 100 символов.
-        [Required]
-        [MaxLength(100)]
         public string Name { get; set; } = string.Empty;
     }
 }

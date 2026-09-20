@@ -38,6 +38,6 @@
         //
         // Возвращает true, если сущность была найдена и удалена,
         // и false, если сущность не найдена.
-        public Task<bool> DeleteAsync(T obj);
+        public Task<bool> DeleteAsync(int id);
     }
 }

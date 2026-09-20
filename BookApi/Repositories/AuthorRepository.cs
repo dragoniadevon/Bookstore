@@ -43,11 +43,10 @@ namespace Bookstore.Api.Repositories
         }
 
         // Удаляет автора из базы данных.
-        public async Task<bool> DeleteAsync(Author obj)
+        public async Task<bool> DeleteAsync(int id)
         {
             // Сначала ищем автора в базе по Id.
-            var author = await _authors
-                .FirstOrDefaultAsync(x => x.Id == obj.Id);
+            var author = await _authors.FirstOrDefaultAsync(x => x.Id == id);
 
             // Если автор найден — удаляем его.
             if (author != null)
@@ -77,8 +76,7 @@ namespace Bookstore.Api.Repositories
         {
             // Ищем первого автора, у которого Id совпадает
             // с Id, переданным в метод.
-            var someAuthor = await _authors
-                .FirstOrDefaultAsync(x => x.Id == id);
+            var someAuthor = await _authors.FirstOrDefaultAsync(x => x.Id == id);
 
             // Если автор найден — возвращаем его.
             if (someAuthor != null)
@@ -95,8 +93,7 @@ namespace Bookstore.Api.Repositories
         {
             // Сначала находим существующего автора в базе.
             // Важно: здесь мы получаем объект, который отслеживается EF Core.
-            var updateObj = await _authors
-                .FirstOrDefaultAsync(x => x.Id == obj.Id);
+            var updateObj = await _authors.FirstOrDefaultAsync(x => x.Id == obj.Id);
 
             // Если автор найден — изменяем его данные.
             if (updateObj != null)
