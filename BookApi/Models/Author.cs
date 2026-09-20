@@ -13,5 +13,11 @@ namespace Bookstore.Api.Models
     public class Author : BaseEntity
     {
         public string Name { get; set; } = string.Empty;
+
+        // Биография
+        public string? Bio { get; set; }
+
+        // Книги автора
+        public ICollection<Book> Books { get; set; } = new List<Book>();
     }
 }
