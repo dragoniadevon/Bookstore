@@ -1,127 +1,171 @@
 ﻿using Bookstore.Api.Data;
-using Bookstore.Api.Models;
+using Bookstore.Api.Models.Entity;
 using Bookstore.Api.Repositories.Interface;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bookstore.Api.Repositories
 {
-    // Репозиторий отвечает за работу с сущностью Author в базе данных.
-    // Здесь находятся операции создания, получения, изменения и удаления авторов.
+    // Repository отвечает за работу с данными в базе.
+    //
+    // В нашей архитектуре Repository не занимается:
+    // - HTTP;
+    // - DTO;
+    // - бизнес-логикой;
+    // - HTTP status codes.
+    //
+    // Его задача — выполнять операции с базой данных.
+    //
+    // Controller
+    //     ↓
+    // Service
+    //     ↓
+    // Repository
+    //     ↓
+    // Database
     internal class AuthorRepository : IBaseRepository<Author>
     {
-        // AppDbContext — основной объект EF Core, через который мы взаимодействуем с БД.
+        // AppDbContext — основной объект EF Core,
+        // через который мы взаимодействуем с базой данных.
         private readonly AppDbContext _dbContext;
 
-        // DbSet<Author> представляет таблицу Authors в базе данных.
-        // Через _authors мы выполняем запросы к этой таблице.
+        // DbSet<Author> представляет набор сущностей Author,
+        // с которым EF Core работает в базе данных.
+        //
+        // В нашей БД этому соответствует таблица Authors.
         private readonly DbSet<Author> _authors;
 
+
+        // AppDbContext передаётся через Dependency Injection.
         public AuthorRepository(AppDbContext dbContext)
         {
-            // Получаем AppDbContext через Dependency Injection.
             _dbContext = dbContext;
 
-            // Получаем DbSet авторов из контекста,
-            // чтобы не обращаться каждый раз к _dbContext.Authors.
+            // Получаем DbSet авторов из AppDbContext.
+            //
+            // Благодаря этому ниже можем писать _authors,
+            // вместо _dbContext.Authors.
             _authors = _dbContext.Authors;
         }
 
+
+        // CREATE
+        //
         // Создаёт нового автора в базе данных.
         public async Task<Author> CreateAsync(Author obj)
         {
-            // Добавляем объект в DbSet.
-            // На этом этапе запись ещё не обязательно сохранена в БД.
+            // Добавляем Entity в DbSet.
+            //
+            // Пока что объект добавлен в Change Tracker EF Core,
+            // но изменения ещё не обязательно отправлены в БД.
             await _authors.AddAsync(obj);
 
             // Сохраняем изменения в базе данных.
+            //
+            // Здесь EF Core сформирует SQL INSERT.
             await _dbContext.SaveChangesAsync();
 
-            // Возвращаем созданного автора.
-            // Например, здесь уже будет заполнен Id,
-            // если он генерируется базой данных.
+            // Возвращаем созданную Entity.
+            //
+            // Например, если Id генерируется БД,
+            // после SaveChangesAsync() здесь уже будет заполненный Id.
             return obj;
         }
 
-        // Удаляет автора из базы данных.
+
+        // DELETE
+        //
+        // Удаляет автора по Id.
         public async Task<bool> DeleteAsync(int id)
         {
-            // Сначала ищем автора в базе по Id.
+            // Сначала ищем существующего автора.
             var author = await _authors.FirstOrDefaultAsync(x => x.Id == id);
 
             // Если автор найден — удаляем его.
             if (author != null)
             {
+                // Помечаем Entity на удаление.
                 _authors.Remove(author);
 
-                // Фактически выполняем DELETE в базе данных.
+                // Сохраняем изменения.
+                //
+                // EF Core сформирует SQL DELETE.
                 await _dbContext.SaveChangesAsync();
 
-                // Сообщаем вызывающему коду, что удаление прошло успешно.
                 return true;
             }
 
-            // Если автора с таким Id нет — удалять нечего.
+            // Если автора нет,
+            // удалить его невозможно.
             return false;
         }
 
-        // Возвращает всех авторов из базы данных.
+
+        // GET ALL
+        //
+        // Возвращает всех авторов.
         public async Task<IEnumerable<Author>> GetAllAsync()
         {
-            // ToListAsync() выполняет SQL-запрос и возвращает список авторов.
+            // ToListAsync() выполняет запрос к БД
+            // и возвращает список Entity.
             return await _authors.ToListAsync();
         }
 
-        // Возвращает автора по его Id.
+
+        // GET BY ID
+        //
+        // Возвращает одного автора по Id.
         public async Task<Author?> GetByIdAsync(int id)
         {
-            // Ищем первого автора, у которого Id совпадает
-            // с Id, переданным в метод.
-            var someAuthor = await _authors.FirstOrDefaultAsync(x => x.Id == id);
-
-            // Если автор найден — возвращаем его.
-            if (someAuthor != null)
-            {
-                return someAuthor;
-            }
-
-            // Если автор не найден — возвращаем null.
-            return null;
+            // FirstOrDefaultAsync() ищет первого автора,
+            // у которого Id совпадает с переданным.
+            //
+            // Если автор найден → возвращается Author.
+            // Если не найден → возвращается null.
+            return await _authors.FirstOrDefaultAsync(x => x.Id == id);
         }
 
-        // Обновляет данные существующего автора.
+
+        // UPDATE
+        //
+        // Обновляет существующего автора.
         public async Task<Author?> UpdateAsync(Author obj)
         {
-            // Сначала находим существующего автора в базе.
-            // Важно: здесь мы получаем объект, который отслеживается EF Core.
+            // Сначала получаем существующего автора из БД.
+            //
+            // Важно:
+            // EF Core начинает отслеживать полученную Entity.
             var updateObj = await _authors.FirstOrDefaultAsync(x => x.Id == obj.Id);
 
-            // Если автор найден — изменяем его данные.
-            if (updateObj != null)
+            // Если автора с таким Id нет,
+            // обновлять нечего.
+            if (updateObj == null)
             {
-                // Если новое имя не null — используем его.
-                // Если null — оставляем старое значение.
-                updateObj.Name = obj.Name ?? updateObj.Name;
-
-                // Обновляем дату последнего изменения.
-                updateObj.ModifiedAt = DateTime.UtcNow;
-
-                // TODO:
-                // Здесь можно добавить остальные свойства,
-                // которые должны обновляться.
-                //
-                // Например:
-                // updateObj.SomeProperty = obj.SomeProperty ?? updateObj.SomeProperty;
-
-                // EF Core обнаружит изменения объекта
-                // и сохранит их в базе данных.
-                await _dbContext.SaveChangesAsync();
-
-                // Возвращаем обновлённый объект.
-                return updateObj;
+                return null;
             }
 
-            // Если автора с таким Id нет — возвращаем null.
-            return null;
+            // Изменяем свойства существующей Entity.
+            //
+            // Если новое имя не передано,
+            // оставляем старое значение.
+            updateObj.Name = obj.Name ?? updateObj.Name;
+
+            // Обновляем дату изменения.
+            updateObj.ModifiedAt = DateTime.UtcNow;
+
+            // Здесь можно добавить остальные поля.
+            //
+            // Например:
+            //
+            // updateObj.SomeProperty = obj.SomeProperty ?? updateObj.SomeProperty;
+
+            // EF Core отслеживает изменения updateObj.
+            //
+            // SaveChangesAsync() сформирует необходимый SQL UPDATE.
+            await _dbContext.SaveChangesAsync();
+
+            // Возвращаем обновлённую Entity.
+            return updateObj;
         }
     }
 }
+

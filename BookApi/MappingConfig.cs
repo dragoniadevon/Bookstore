@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
-using Bookstore.Api.Models;
 using Bookstore.Api.Models.DTO;
+using Bookstore.Api.Models.Entity;
 
 namespace Bookstore.Api
 {

@@ -1,4 +1,4 @@
-﻿using Bookstore.Api.Models;
+﻿using Bookstore.Api.Models.Entity;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bookstore.Api.Data

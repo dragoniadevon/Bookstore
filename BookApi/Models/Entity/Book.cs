@@ -1,7 +1,7 @@
-﻿using Bookstore.Api.Models.Base;
+﻿using Bookstore.Api.Models.Entity.Base;
 using System.ComponentModel.DataAnnotations;
 
-namespace Bookstore.Api.Models
+namespace Bookstore.Api.Models.Entity
 {
     public class Book : BaseEntity
     {

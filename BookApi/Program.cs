@@ -1,7 +1,7 @@
 using Bookstore.Api;
 using Bookstore.Api.Data;
-using Bookstore.Api.Models;
 using Bookstore.Api.Models.DTO;
+using Bookstore.Api.Models.Entity;
 using Bookstore.Api.Repositories;
 using Bookstore.Api.Repositories.Interface;
 using Bookstore.Api.Services;

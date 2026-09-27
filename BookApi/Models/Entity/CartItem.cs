@@ -1,6 +1,6 @@
-﻿using Bookstore.Api.Models.Base;
+﻿using Bookstore.Api.Models.Entity.Base;
 
-namespace Bookstore.Api.Models
+namespace Bookstore.Api.Models.Entity
 {
     public class CartItem : BaseEntity
     {

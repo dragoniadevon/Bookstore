@@ -1,4 +1,4 @@
-﻿namespace Bookstore.Api.Models.Base
+﻿namespace Bookstore.Api.Models.Entity.Base
 {
     // Базовый класс для сущностей приложения.
     //
