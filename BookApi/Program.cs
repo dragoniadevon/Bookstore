@@ -79,6 +79,16 @@ public partial class Program
 
         builder.Services.AddScoped<IBaseService<AuthorDTO>, AuthorService>();
 
+        // Book: репозиторий и сервис.
+        builder.Services.AddScoped<IBaseRepository<Book>, BookRepository>();
+        builder.Services.AddScoped<IBaseService<BookDTO>, BookService>();
+
+        // Genre: репозиторий и сервис.
+        // GenreRepository нужен и самому GenreService, и BookService
+        // (тот проверяет, что жанр существует).
+        builder.Services.AddScoped<IBaseRepository<Genre>, GenreRepository>();
+        builder.Services.AddScoped<IBaseService<GenreDTO>, GenreService>();
+
         // Добавляем поддержку Controllers.
         //
         // Благодаря этому ASP.NET Core сможет находить наши

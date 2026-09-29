@@ -22,7 +22,7 @@ namespace Bookstore.Api.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("Bookstore.Api.Models.Author", b =>
+            modelBuilder.Entity("Bookstore.Api.Models.Entity.Author", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -56,7 +56,7 @@ namespace Bookstore.Api.Migrations
                         });
                 });
 
-            modelBuilder.Entity("Bookstore.Api.Models.Book", b =>
+            modelBuilder.Entity("Bookstore.Api.Models.Entity.Book", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -86,6 +86,7 @@ namespace Bookstore.Api.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<decimal>("Price")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("StockQuantity")
@@ -106,7 +107,7 @@ namespace Bookstore.Api.Migrations
                     b.ToTable("Books");
                 });
 
-            modelBuilder.Entity("Bookstore.Api.Models.Cart", b =>
+            modelBuilder.Entity("Bookstore.Api.Models.Entity.Cart", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -131,7 +132,7 @@ namespace Bookstore.Api.Migrations
                     b.ToTable("Carts");
                 });
 
-            modelBuilder.Entity("Bookstore.Api.Models.CartItem", b =>
+            modelBuilder.Entity("Bookstore.Api.Models.Entity.CartItem", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -163,7 +164,7 @@ namespace Bookstore.Api.Migrations
                     b.ToTable("CartItems");
                 });
 
-            modelBuilder.Entity("Bookstore.Api.Models.Genre", b =>
+            modelBuilder.Entity("Bookstore.Api.Models.Entity.Genre", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -184,9 +185,17 @@ namespace Bookstore.Api.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Genres");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Name = "Genre"
+                        });
                 });
 
-            modelBuilder.Entity("Bookstore.Api.Models.Order", b =>
+            modelBuilder.Entity("Bookstore.Api.Models.Entity.Order", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -220,7 +229,7 @@ namespace Bookstore.Api.Migrations
                     b.ToTable("Orders");
                 });
 
-            modelBuilder.Entity("Bookstore.Api.Models.OrderItem", b =>
+            modelBuilder.Entity("Bookstore.Api.Models.Entity.OrderItem", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -255,7 +264,7 @@ namespace Bookstore.Api.Migrations
                     b.ToTable("OrderItems");
                 });
 
-            modelBuilder.Entity("Bookstore.Api.Models.User", b =>
+            modelBuilder.Entity("Bookstore.Api.Models.Entity.User", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -286,19 +295,19 @@ namespace Bookstore.Api.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("Bookstore.Api.Models.Book", b =>
+            modelBuilder.Entity("Bookstore.Api.Models.Entity.Book", b =>
                 {
-                    b.HasOne("Bookstore.Api.Models.Author", "Author")
+                    b.HasOne("Bookstore.Api.Models.Entity.Author", "Author")
                         .WithMany("Books")
                         .HasForeignKey("AuthorId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Bookstore.Api.Models.Cart", null)
+                    b.HasOne("Bookstore.Api.Models.Entity.Cart", null)
                         .WithMany("Books")
                         .HasForeignKey("CartId");
 
-                    b.HasOne("Bookstore.Api.Models.Genre", "Genre")
+                    b.HasOne("Bookstore.Api.Models.Entity.Genre", "Genre")
                         .WithMany("Books")
                         .HasForeignKey("GenreId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -309,26 +318,26 @@ namespace Bookstore.Api.Migrations
                     b.Navigation("Genre");
                 });
 
-            modelBuilder.Entity("Bookstore.Api.Models.Cart", b =>
+            modelBuilder.Entity("Bookstore.Api.Models.Entity.Cart", b =>
                 {
-                    b.HasOne("Bookstore.Api.Models.User", "User")
+                    b.HasOne("Bookstore.Api.Models.Entity.User", "User")
                         .WithOne("Cart")
-                        .HasForeignKey("Bookstore.Api.Models.Cart", "UserId")
+                        .HasForeignKey("Bookstore.Api.Models.Entity.Cart", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Bookstore.Api.Models.CartItem", b =>
+            modelBuilder.Entity("Bookstore.Api.Models.Entity.CartItem", b =>
                 {
-                    b.HasOne("Bookstore.Api.Models.Book", "Book")
+                    b.HasOne("Bookstore.Api.Models.Entity.Book", "Book")
                         .WithMany()
                         .HasForeignKey("BookId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Bookstore.Api.Models.Cart", "Cart")
+                    b.HasOne("Bookstore.Api.Models.Entity.Cart", "Cart")
                         .WithMany()
                         .HasForeignKey("CartId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -339,9 +348,9 @@ namespace Bookstore.Api.Migrations
                     b.Navigation("Cart");
                 });
 
-            modelBuilder.Entity("Bookstore.Api.Models.Order", b =>
+            modelBuilder.Entity("Bookstore.Api.Models.Entity.Order", b =>
                 {
-                    b.HasOne("Bookstore.Api.Models.User", "User")
+                    b.HasOne("Bookstore.Api.Models.Entity.User", "User")
                         .WithMany("Orders")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -350,15 +359,15 @@ namespace Bookstore.Api.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Bookstore.Api.Models.OrderItem", b =>
+            modelBuilder.Entity("Bookstore.Api.Models.Entity.OrderItem", b =>
                 {
-                    b.HasOne("Bookstore.Api.Models.Book", "Book")
+                    b.HasOne("Bookstore.Api.Models.Entity.Book", "Book")
                         .WithMany()
                         .HasForeignKey("BookId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Bookstore.Api.Models.Order", "Order")
+                    b.HasOne("Bookstore.Api.Models.Entity.Order", "Order")
                         .WithMany("OrderItems")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -369,27 +378,27 @@ namespace Bookstore.Api.Migrations
                     b.Navigation("Order");
                 });
 
-            modelBuilder.Entity("Bookstore.Api.Models.Author", b =>
+            modelBuilder.Entity("Bookstore.Api.Models.Entity.Author", b =>
                 {
                     b.Navigation("Books");
                 });
 
-            modelBuilder.Entity("Bookstore.Api.Models.Cart", b =>
+            modelBuilder.Entity("Bookstore.Api.Models.Entity.Cart", b =>
                 {
                     b.Navigation("Books");
                 });
 
-            modelBuilder.Entity("Bookstore.Api.Models.Genre", b =>
+            modelBuilder.Entity("Bookstore.Api.Models.Entity.Genre", b =>
                 {
                     b.Navigation("Books");
                 });
 
-            modelBuilder.Entity("Bookstore.Api.Models.Order", b =>
+            modelBuilder.Entity("Bookstore.Api.Models.Entity.Order", b =>
                 {
                     b.Navigation("OrderItems");
                 });
 
-            modelBuilder.Entity("Bookstore.Api.Models.User", b =>
+            modelBuilder.Entity("Bookstore.Api.Models.Entity.User", b =>
                 {
                     b.Navigation("Cart");
 

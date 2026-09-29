@@ -31,7 +31,35 @@ namespace Bookstore.Api
             // AuthorDTO:
             // Id = 1
             // Name = "Толстой"
-            CreateMap<Author, AuthorDTO>();
+            //CreateMap<Author, AuthorDTO>();
+
+            // Author ↔ AuthorDTO
+            //
+            // Раньше было только правило Author → AuthorDTO (Entity в DTO).
+            // Добавлен .ReverseMap(), чтобы работало и обратное преобразование
+            // AuthorDTO → Author: оно нужно в AuthorService при создании
+            // и обновлении автора (_mapper.Map<Author>(dto)).
+            CreateMap<Author, AuthorDTO>().ReverseMap();
+
+            // Book ↔ BookDTO
+            //
+            // Book → BookDTO: используется при получении книг (GET),
+            // чтобы возвращать клиенту DTO, а не Entity.
+            //
+            // BookDTO → Book (через .ReverseMap()): используется в BookService
+            // при создании (POST) и обновлении (PUT) книги, когда данные
+            // из запроса нужно перенести в Entity.
+            CreateMap<Book, BookDTO>().ReverseMap();
+
+            // Genre ↔ GenreDTO
+            //
+            // Genre → GenreDTO: используется при получении жанров (GET),
+            // чтобы возвращать клиенту DTO, а не Entity.
+            //
+            // GenreDTO → Genre (через .ReverseMap()): используется в GenreService
+            // при создании (POST) и обновлении (PUT) жанра, когда данные
+            // из запроса нужно перенести в Entity.
+            CreateMap<Genre, GenreDTO>().ReverseMap();
         }
     }
 }

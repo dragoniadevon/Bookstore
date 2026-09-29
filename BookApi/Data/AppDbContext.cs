@@ -84,13 +84,30 @@ namespace Bookstore.Api.Data
             modelBuilder.Entity<Author>().HasData(
                 new Author
                 {
-                   
                     Name = "Author",
                     Id = 1
                 }
             );
 
+            // Начальные данные: тестовый жанр.
+            //
+            // Нужен, чтобы можно было сразу создавать книги
+            // с genreId = 1: BookService проверяет, что жанр существует.
+            modelBuilder.Entity<Genre>().HasData(
+                new Genre
+                {
+                    Name = "Genre",
+                    Id = 1
+                }
+            );
 
+            // Цена книги хранится как decimal(18, 2):
+            // до 18 цифр всего, из них 2 после запятой (копейки).
+            // Без настройки EF Core выдаёт предупреждение
+            // и может обрезать дробную часть.
+            modelBuilder.Entity<Book>()
+                .Property(b => b.Price)
+                .HasPrecision(18, 2);
         }
     }
 }
