@@ -27,11 +27,16 @@ namespace Bookstore.Api.Models.Entity
         // Genre ID
         public int GenreId { get; set; }
 
+        // Publisher ID
+        public int PublisherId { get; set; }
+
         // Автор книги
         public Author Author { get; set; } = null!;
 
         // Жанр книги
         public Genre Genre { get; set; } = null!;
 
+        // Издательство книги
+        public Publisher Publisher { get; set; } = null!;
     }
 }

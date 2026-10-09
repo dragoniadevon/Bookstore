@@ -70,5 +70,11 @@ namespace Bookstore.Api.Models.DTO
         // Работает так же, как AuthorId: BookService проверяет,
         // что такой жанр существует.
         public int GenreId { get; set; }
+
+        // ID издательства книги (внешний ключ на таблицу Publishers).
+        //
+        // Работает так же, как AuthorId и GenreId:
+        // BookService проверяет, что такое издательство существует.
+        public int PublisherId { get; set; }
     }
 }

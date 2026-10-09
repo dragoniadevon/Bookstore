@@ -89,6 +89,9 @@ namespace Bookstore.Api.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int>("PublisherId")
+                        .HasColumnType("int");
+
                     b.Property<int>("StockQuantity")
                         .HasColumnType("int");
 
@@ -103,6 +106,8 @@ namespace Bookstore.Api.Migrations
                     b.HasIndex("CartId");
 
                     b.HasIndex("GenreId");
+
+                    b.HasIndex("PublisherId");
 
                     b.ToTable("Books");
                 });
@@ -264,6 +269,40 @@ namespace Bookstore.Api.Migrations
                     b.ToTable("OrderItems");
                 });
 
+            modelBuilder.Entity("Bookstore.Api.Models.Entity.Publisher", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Publishers");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Name = "Publisher"
+                        });
+                });
+
             modelBuilder.Entity("Bookstore.Api.Models.Entity.User", b =>
                 {
                     b.Property<int>("Id")
@@ -300,7 +339,7 @@ namespace Bookstore.Api.Migrations
                     b.HasOne("Bookstore.Api.Models.Entity.Author", "Author")
                         .WithMany("Books")
                         .HasForeignKey("AuthorId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Bookstore.Api.Models.Entity.Cart", null)
@@ -310,12 +349,20 @@ namespace Bookstore.Api.Migrations
                     b.HasOne("Bookstore.Api.Models.Entity.Genre", "Genre")
                         .WithMany("Books")
                         .HasForeignKey("GenreId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Bookstore.Api.Models.Entity.Publisher", "Publisher")
+                        .WithMany("Books")
+                        .HasForeignKey("PublisherId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Author");
 
                     b.Navigation("Genre");
+
+                    b.Navigation("Publisher");
                 });
 
             modelBuilder.Entity("Bookstore.Api.Models.Entity.Cart", b =>
@@ -396,6 +443,11 @@ namespace Bookstore.Api.Migrations
             modelBuilder.Entity("Bookstore.Api.Models.Entity.Order", b =>
                 {
                     b.Navigation("OrderItems");
+                });
+
+            modelBuilder.Entity("Bookstore.Api.Models.Entity.Publisher", b =>
+                {
+                    b.Navigation("Books");
                 });
 
             modelBuilder.Entity("Bookstore.Api.Models.Entity.User", b =>

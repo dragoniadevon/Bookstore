@@ -19,6 +19,7 @@ namespace Bookstore.Api.Services
         // что AuthorId и GenreId из запроса существуют.
         private readonly IBaseRepository<Author> _authorRepository;
         private readonly IBaseRepository<Genre> _genreRepository;
+        private readonly IBaseRepository<Publisher> _publisherRepository;
 
         // AutoMapper: преобразование Entity <-> DTO.
         private readonly IMapper _mapper;
@@ -28,11 +29,13 @@ namespace Bookstore.Api.Services
             IBaseRepository<Book> repository,
             IBaseRepository<Author> authorRepository,
             IBaseRepository<Genre> genreRepository,
+            IBaseRepository<Publisher> publisherRepository,
             IMapper mapper)
         {
             _repository = repository;
             _authorRepository = authorRepository;
             _genreRepository = genreRepository;
+            _publisherRepository = publisherRepository;
             _mapper = mapper;
         }
 
@@ -59,7 +62,7 @@ namespace Bookstore.Api.Services
         // null = указанный автор или жанр не существует (Controller вернёт 400).
         public async Task<BookDTO?> CreateAsync(BookDTO entity)
         {
-            if (!await AuthorAndGenreExistAsync(entity.AuthorId, entity.GenreId))
+            if (!await AuthorGenrePublisherExistAsync(entity.AuthorId, entity.GenreId, entity.PublisherId))
             {
                 return null;
             }
@@ -82,7 +85,7 @@ namespace Bookstore.Api.Services
                 return null;
             }
 
-            if (!await AuthorAndGenreExistAsync(entity.AuthorId, entity.GenreId))
+            if (!await AuthorGenrePublisherExistAsync(entity.AuthorId, entity.GenreId, entity.PublisherId))
             {
                 return null;
             }
@@ -118,6 +121,12 @@ namespace Bookstore.Api.Services
                 book.GenreId = dto.GenreId;
             }
 
+            if (dto.PublisherId > 0)
+            {
+                if (await _publisherRepository.GetByIdAsync(dto.PublisherId) == null) return null;
+                book.PublisherId = dto.PublisherId;
+            }
+
             // Остальные поля обновляем, только если они переданы.
             if (!string.IsNullOrEmpty(dto.Title)) book.Title = dto.Title;
             if (dto.Description != null) book.Description = dto.Description;
@@ -136,10 +145,11 @@ namespace Bookstore.Api.Services
         }
 
         // Проверка: существуют ли и автор, и жанр с такими ID.
-        private async Task<bool> AuthorAndGenreExistAsync(int authorId, int genreId)
+        private async Task<bool> AuthorGenrePublisherExistAsync(int authorId, int genreId, int publisherId)
         {
             return await _authorRepository.GetByIdAsync(authorId) != null
-                && await _genreRepository.GetByIdAsync(genreId) != null;
+                && await _genreRepository.GetByIdAsync(genreId) != null
+                && await _publisherRepository.GetByIdAsync(publisherId) != null;
         }
     }
 }

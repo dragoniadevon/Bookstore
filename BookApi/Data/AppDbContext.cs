@@ -42,6 +42,11 @@ namespace Bookstore.Api.Data
         // Через это свойство мы можем работать с жанрами книг.
         public DbSet<Genre> Genres { get; set; }
 
+        // DbSet<Publisher> представляет таблицу Publishers в базе данных.
+        //
+        // Через это свойство мы можем работать с издательствами.
+        public DbSet<Publisher> Publishers { get; set; }
+
         // DbSet<User> представляет таблицу Users в базе данных.
         //
         // Через это свойство мы можем работать с пользователями.
@@ -101,6 +106,19 @@ namespace Bookstore.Api.Data
                 }
             );
 
+            // Начальные данные: тестовое издательство.
+            //
+            // Нужно, чтобы можно было сразу создавать книги
+            // с publisherId = 1.
+            modelBuilder.Entity<Publisher>().HasData(
+                new Publisher
+                {
+                    Name = "Publisher",
+                    Id = 1
+                }
+            );
+
+
             // Цена книги хранится как decimal(18, 2):
             // до 18 цифр всего, из них 2 после запятой (копейки).
             // Без настройки EF Core выдаёт предупреждение
@@ -108,6 +126,30 @@ namespace Bookstore.Api.Data
             modelBuilder.Entity<Book>()
                 .Property(b => b.Price)
                 .HasPrecision(18, 2);
+
+
+            // Связи Book с Author, Genre и Publisher.
+            //
+            // Один автор / жанр / издательство → много книг.
+            // Restrict запрещает удалять автора, жанр или издательство,
+            // пока у них есть книги.
+            modelBuilder.Entity<Book>()
+                .HasOne(b => b.Author)
+                .WithMany(a => a.Books)
+                .HasForeignKey(b => b.AuthorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Book>()
+                .HasOne(b => b.Genre)
+                .WithMany(g => g.Books)
+                .HasForeignKey(b => b.GenreId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Book>()
+                .HasOne(b => b.Publisher)
+                .WithMany(p => p.Books)
+                .HasForeignKey(b => b.PublisherId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

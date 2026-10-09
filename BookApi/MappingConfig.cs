@@ -60,6 +60,16 @@ namespace Bookstore.Api
             // при создании (POST) и обновлении (PUT) жанра, когда данные
             // из запроса нужно перенести в Entity.
             CreateMap<Genre, GenreDTO>().ReverseMap();
+
+            // Publisher ↔ PublisherDTO
+            //
+            // Publisher → PublisherDTO: используется при получении
+            // издательств (GET), чтобы возвращать клиенту DTO, а не Entity.
+            //
+            // PublisherDTO → Publisher (через .ReverseMap()): используется
+            // в PublisherService при создании (POST) и обновлении (PUT).
+            CreateMap<Publisher, PublisherDTO>().ReverseMap();
         }
     }
+     
 }
