@@ -1,31 +1,421 @@
+/* ==========================================================================
+   Стили книжного магазина.
+   Bootstrap даёт основу (сетка, кнопки, формы), а здесь — собственная тема:
+   тёплые "бумажные" цвета, шрифты и обложки книг.
+   ========================================================================== */
+
+/* Переменные (CSS custom properties): цвета задаём один раз и используем везде.
+   Переопределяем и цвета Bootstrap (--bs-...), чтобы его кнопки и ссылки
+   были в цветах магазина. */
+:root {
+  --shop-bg: #faf7f2;
+  --shop-surface: #ffffff;
+  --shop-ink: #2a2420;
+  --shop-muted: #7a6e64;
+  --shop-border: #e8e0d4;
+  --shop-accent: #9c4a2f;
+  --shop-accent-dark: #7d3a24;
+  --shop-accent-soft: #f4e6dd;
+  --shop-success: #2f7a4f;
+
+  --bs-body-bg: var(--shop-bg);
+  --bs-body-color: var(--shop-ink);
+  --bs-link-color: var(--shop-accent);
+  --bs-link-color-rgb: 156, 74, 47;
+  --bs-link-hover-color: var(--shop-accent-dark);
+  --bs-border-color: var(--shop-border);
+  --bs-primary: var(--shop-accent);
+  --bs-primary-rgb: 156, 74, 47;
+  --bs-font-sans-serif: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
 html {
-  font-size: 14px;
+  font-size: 15px;
 }
 
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
-}
-
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
-  position: relative;
-  min-height: 100%;
-}
-
+/* Подвал всегда прижат к низу: body — колонка на всю высоту окна,
+   а main растягивается и занимает свободное место. */
 body {
-  margin-bottom: 60px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--shop-bg);
 }
 
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-  color: var(--bs-secondary-color);
-  text-align: end;
+main {
+  flex: 1 0 auto;
 }
 
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-  text-align: start;
+h1, h2, h3, h4, .font-serif {
+  font-family: "Lora", Georgia, "Times New Roman", serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.text-muted-shop {
+  color: var(--shop-muted) !important;
+}
+
+/* ---------- Кнопки ---------- */
+
+.btn-primary {
+  --bs-btn-bg: var(--shop-accent);
+  --bs-btn-border-color: var(--shop-accent);
+  --bs-btn-hover-bg: var(--shop-accent-dark);
+  --bs-btn-hover-border-color: var(--shop-accent-dark);
+  --bs-btn-active-bg: var(--shop-accent-dark);
+  --bs-btn-active-border-color: var(--shop-accent-dark);
+  --bs-btn-disabled-bg: #c9b8ad;
+  --bs-btn-disabled-border-color: #c9b8ad;
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--shop-accent);
+  --bs-btn-border-color: var(--shop-accent);
+  --bs-btn-hover-bg: var(--shop-accent);
+  --bs-btn-hover-border-color: var(--shop-accent);
+  --bs-btn-active-bg: var(--shop-accent-dark);
+  --bs-btn-active-border-color: var(--shop-accent-dark);
+}
+
+.btn:focus-visible, .form-control:focus, .form-select:focus, .form-check-input:focus {
+  border-color: var(--shop-accent);
+  box-shadow: 0 0 0 0.2rem rgba(156, 74, 47, 0.2);
+}
+
+.form-check-input:checked {
+  background-color: var(--shop-accent);
+  border-color: var(--shop-accent);
+}
+
+/* ---------- Шапка ---------- */
+
+.shop-header {
+  background: var(--shop-surface);
+  border-bottom: 1px solid var(--shop-border);
+}
+
+.shop-brand {
+  font-family: "Lora", Georgia, serif;
+  font-weight: 700;
+  font-size: 1.35rem;
+  color: var(--shop-ink);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.shop-brand:hover {
+  color: var(--shop-accent);
+}
+
+.shop-brand svg {
+  color: var(--shop-accent);
+}
+
+.shop-header .nav-link {
+  color: var(--shop-ink);
+  font-weight: 500;
+}
+
+.shop-header .nav-link:hover,
+.shop-header .nav-link.active {
+  color: var(--shop-accent);
+}
+
+.cart-link {
+  position: relative;
+}
+
+.cart-badge {
+  position: absolute;
+  top: -2px;
+  right: -8px;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: var(--shop-accent);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.25rem;
+  text-align: center;
+}
+
+/* Переключатель источника данных */
+.source-switch .btn {
+  font-size: 0.78rem;
+  padding: 0.15rem 0.6rem;
+}
+
+.source-switch .btn.active-source {
+  background: var(--shop-ink);
+  border-color: var(--shop-ink);
+  color: #fff;
+}
+
+/* ---------- Главный баннер ---------- */
+
+.hero {
+  background:
+    radial-gradient(circle at 85% 20%, rgba(156, 74, 47, 0.12), transparent 45%),
+    linear-gradient(135deg, #f3ebe0 0%, #faf7f2 60%);
+  border: 1px solid var(--shop-border);
+  border-radius: 1.25rem;
+  padding: 2.5rem 2rem;
+}
+
+.hero h1 {
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+}
+
+.hero .search-box {
+  max-width: 560px;
+}
+
+/* ---------- Карточки и панели ---------- */
+
+.shop-panel {
+  background: var(--shop-surface);
+  border: 1px solid var(--shop-border);
+  border-radius: 1rem;
+}
+
+.book-card {
+  background: var(--shop-surface);
+  border: 1px solid var(--shop-border);
+  border-radius: 1rem;
+  overflow: hidden;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.book-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0.75rem 1.5rem rgba(42, 36, 32, 0.08);
+}
+
+.book-card .cover-wrap {
+  padding: 1rem 1rem 0;
+}
+
+.book-card .card-body {
+  padding: 0.9rem 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.book-card .book-title {
+  font-family: "Lora", Georgia, serif;
+  font-weight: 600;
+  font-size: 1.05rem;
+  line-height: 1.3;
+  color: var(--shop-ink);
+  text-decoration: none;
+}
+
+.book-card .book-title:hover {
+  color: var(--shop-accent);
+}
+
+.book-price {
+  font-weight: 700;
+  font-size: 1.15rem;
+}
+
+.genre-chip {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--shop-accent);
+  background: var(--shop-accent-soft);
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+}
+
+/* ---------- Обложки книг ----------
+   Если у книги нет картинки, рисуем обложку сами: цветной фон,
+   "корешок" слева, название и автор. Цвет зависит от Id книги. */
+
+.book-cover {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  border-radius: 0.35rem 0.6rem 0.6rem 0.35rem;
+  overflow: hidden;
+  box-shadow: 0 0.4rem 0.9rem rgba(42, 36, 32, 0.18);
+  color: #fff;
+}
+
+.book-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.book-cover .cover-art {
+  position: absolute;
+  inset: 0;
+  padding: 12% 10% 10% 16%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* Корешок книги */
+.book-cover .cover-art::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 6%;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.book-cover .cover-title {
+  font-family: "Lora", Georgia, serif;
+  font-weight: 700;
+  line-height: 1.15;
+  font-size: 1.15rem;
+  overflow-wrap: anywhere;
+}
+
+.book-cover .cover-author {
+  font-size: 0.78rem;
+  opacity: 0.85;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.book-cover.cover-sm {
+  width: 64px;
+  flex-shrink: 0;
+}
+
+.book-cover.cover-sm .cover-title {
+  font-size: 0.55rem;
+}
+
+.book-cover.cover-sm .cover-author {
+  display: none;
+}
+
+.book-cover.cover-lg .cover-title {
+  font-size: 2rem;
+}
+
+.book-cover.cover-lg .cover-author {
+  font-size: 1rem;
+}
+
+.cover-0 { background: linear-gradient(160deg, #9c4a2f, #5e2a19); }
+.cover-1 { background: linear-gradient(160deg, #2f5d62, #1b383b); }
+.cover-2 { background: linear-gradient(160deg, #3d4f7c, #232e4a); }
+.cover-3 { background: linear-gradient(160deg, #7a5c2e, #4a3719); }
+.cover-4 { background: linear-gradient(160deg, #6b3d5e, #3f2238); }
+.cover-5 { background: linear-gradient(160deg, #4f6b3a, #2e4021); }
+
+.out-of-stock .book-cover {
+  filter: grayscale(0.7);
+  opacity: 0.75;
+}
+
+/* ---------- Фильтры ---------- */
+
+.filter-list .list-group-item {
+  border: 0;
+  border-radius: 0.5rem !important;
+  padding: 0.45rem 0.75rem;
+  background: transparent;
+  color: var(--shop-ink);
+}
+
+.filter-list .list-group-item.active {
+  background: var(--shop-accent-soft);
+  color: var(--shop-accent-dark);
+  font-weight: 600;
+}
+
+/* ---------- Корзина и заказ ---------- */
+
+.qty-control {
+  width: 7.5rem;
+}
+
+.qty-control .form-control {
+  text-align: center;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.35rem 0;
+}
+
+.summary-total {
+  font-size: 1.3rem;
+  font-weight: 700;
+  border-top: 1px solid var(--shop-border);
+  padding-top: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 1rem;
+}
+
+.empty-state .empty-icon {
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 50%;
+  background: var(--shop-accent-soft);
+  color: var(--shop-accent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.success-icon {
+  width: 5rem;
+  height: 5rem;
+  border-radius: 50%;
+  background: #e3f1e8;
+  color: var(--shop-success);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.test-cards code {
+  color: var(--shop-ink);
+  background: var(--shop-accent-soft);
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.3rem;
+}
+
+/* ---------- Вход и регистрация ---------- */
+
+.auth-card {
+  max-width: 440px;
+  margin: 2rem auto;
+}
+
+/* ---------- Подвал ---------- */
+
+.shop-footer {
+  background: var(--shop-ink);
+  color: #cfc6bd;
+  font-size: 0.9rem;
+}
+
+.shop-footer a {
+  color: #fff;
 }

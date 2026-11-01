@@ -1,0 +1,73 @@
+@page
+@* Список книг для администратора (адрес "/Admin/Books"). *@
+@model BookWebClient.Pages.Admin.Books.IndexModel
+@{
+    ViewData["Title"] = "Керування книгами";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <h1 class="mb-1">Керування книгами</h1>
+        <p class="text-muted-shop mb-0">
+            Джерело: <strong>@(Model.Mode == DataSourceMode.Mock ? "мок-дані (у пам'яті)" : "Bookstore.Api")</strong>
+        </p>
+    </div>
+    <a class="btn btn-primary" asp-page="Edit">+ Додати книгу</a>
+</div>
+
+@if (Model.Catalog.HasError)
+{
+    <div class="alert alert-warning">
+        Не вдалося завантажити книги: @Model.Catalog.ErrorMessage
+    </div>
+}
+else
+{
+    <div class="shop-panel">
+        @* table-responsive — на узком экране таблица прокручивается по горизонтали *@
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-3">Книга</th>
+                        <th>Жанр</th>
+                        <th>Видавництво</th>
+                        <th class="text-end">Ціна</th>
+                        <th class="text-end">Залишок</th>
+                        <th class="text-end pe-3">Дії</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var book in Model.Catalog.Books.OrderBy(b => b.Title))
+                    {
+                        <tr>
+                            <td class="ps-3">
+                                <div class="d-flex align-items-center gap-3">
+                                    <partial name="_BookCover" model="@(new BookCoverModel(book.Id, book.Title, book.AuthorName, book.ImageUrl, "cover-sm"))" />
+                                    <div>
+                                        <div class="fw-semibold">@book.Title</div>
+                                        <div class="small text-muted-shop">@book.AuthorName</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>@book.GenreName</td>
+                            <td>@book.PublisherName</td>
+                            <td class="text-end text-nowrap">@book.Price.ToUah()</td>
+                            <td class="text-end">
+                                <span class="@(book.InStock ? "" : "text-danger fw-semibold")">@book.StockQuantity</span>
+                            </td>
+                            <td class="text-end pe-3 text-nowrap">
+                                <a class="btn btn-sm btn-outline-primary" asp-page="Edit" asp-route-id="@book.Id">Змінити</a>
+                                @* onsubmit + confirm — браузер спросит подтверждение перед удалением *@
+                                <form method="post" asp-page-handler="Delete" asp-route-id="@book.Id" class="d-inline"
+                                      onsubmit="return confirm('Видалити книгу «@book.Title»?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Видалити</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

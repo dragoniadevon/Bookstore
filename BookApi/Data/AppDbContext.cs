@@ -1,4 +1,5 @@
 ﻿using Bookstore.Api.Models.Entity;
+using Bookstore.Api.Models.Entity.Base;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bookstore.Api.Data
@@ -85,36 +86,49 @@ namespace Bookstore.Api.Data
             //
             // Эти данные будут добавлены при применении миграции.
             // В данном случае при создании/обновлении БД
-            // будет добавлен один тестовый автор.
+            // будет добавлен один автор (Id = 1).
+            //
+            // Значения HasData должны быть постоянными (не DateTime.UtcNow),
+            // иначе EF Core будет считать, что модель меняется при каждом запуске,
+            // и создавать новую миграцию. Поэтому дата задана явно.
+            //
+            // Остальной демонстрационный каталог добавляет DbSeeder
+            // при запуске API в режиме разработки.
+            var seedDate = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
             modelBuilder.Entity<Author>().HasData(
                 new Author
                 {
-                    Name = "Author",
-                    Id = 1
+                    Id = 1,
+                    Name = "Тарас Шевченко",
+                    CreatedAt = seedDate
                 }
             );
 
-            // Начальные данные: тестовый жанр.
+            // Начальные данные: жанр.
             //
             // Нужен, чтобы можно было сразу создавать книги
             // с genreId = 1: BookService проверяет, что жанр существует.
             modelBuilder.Entity<Genre>().HasData(
                 new Genre
                 {
-                    Name = "Genre",
-                    Id = 1
+                    Id = 1,
+                    Name = "Класика",
+                    CreatedAt = seedDate
                 }
             );
 
-            // Начальные данные: тестовое издательство.
+            // Начальные данные: издательство.
             //
             // Нужно, чтобы можно было сразу создавать книги
             // с publisherId = 1.
             modelBuilder.Entity<Publisher>().HasData(
                 new Publisher
                 {
-                    Name = "Publisher",
-                    Id = 1
+                    Id = 1,
+                    Name = "Книжковий дім",
+                    Description = "Класична та сучасна проза",
+                    CreatedAt = seedDate
                 }
             );
 
@@ -126,6 +140,31 @@ namespace Bookstore.Api.Data
             modelBuilder.Entity<Book>()
                 .Property(b => b.Price)
                 .HasPrecision(18, 2);
+
+            // То же для денежных полей заказа: общая сумма и цена позиции.
+            modelBuilder.Entity<Order>()
+                .Property(o => o.TotalAmount)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<OrderItem>()
+                .Property(i => i.UnitPrice)
+                .HasPrecision(18, 2);
+
+
+            // Позиции заказа ссылаются на книгу.
+            //
+            // По умолчанию EF Core настраивает каскадное удаление: удалили книгу —
+            // удалились и все строки заказов с ней, то есть пропала бы история покупок.
+            // Restrict запрещает удалять книгу, которая есть в заказах
+            // (BookRepository заранее проверяет это и возвращает InUse).
+            //
+            // Для CartItem каскад оставляем: если книгу удалили из магазина,
+            // пусть она просто исчезнет из корзин.
+            modelBuilder.Entity<OrderItem>()
+                .HasOne(i => i.Book)
+                .WithMany()
+                .HasForeignKey(i => i.BookId)
+                .OnDelete(DeleteBehavior.Restrict);
 
 
             // Связи Book с Author, Genre и Publisher.
@@ -150,6 +189,40 @@ namespace Bookstore.Api.Data
                 .WithMany(p => p.Books)
                 .HasForeignKey(b => b.PublisherId)
                 .OnDelete(DeleteBehavior.Restrict);
+        }
+
+
+        // Переопределяем SaveChangesAsync, чтобы автоматически заполнять
+        // служебные даты из BaseEntity во ВСЕХ сущностях:
+        // - CreatedAt — при добавлении записи;
+        // - ModifiedAt — при изменении записи.
+        //
+        // Так не нужно помнить об этом в каждом репозитории.
+        //
+        // ChangeTracker — "журнал" EF Core: в нём видно, какие объекты
+        // добавлены (Added), изменены (Modified) или удалены (Deleted).
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            var now = DateTime.UtcNow;
+
+            foreach (var entry in ChangeTracker.Entries<BaseEntity>())
+            {
+                if (entry.State == EntityState.Added)
+                {
+                    entry.Entity.CreatedAt = now;
+                }
+                else if (entry.State == EntityState.Modified)
+                {
+                    entry.Entity.ModifiedAt = now;
+
+                    // CreatedAt при изменении трогать нельзя. Если объект пришёл
+                    // через Update(), EF Core пометит изменёнными все поля —
+                    // запрещаем перезаписывать дату создания.
+                    entry.Property(e => e.CreatedAt).IsModified = false;
+                }
+            }
+
+            return base.SaveChangesAsync(cancellationToken);
         }
     }
 }

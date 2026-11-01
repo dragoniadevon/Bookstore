@@ -1,26 +1,33 @@
 ﻿@page
+@* Error.cshtml — страница, которую видит пользователь, если на сервере произошла ошибка.
+   Показывается только НЕ в режиме разработки (см. app.UseExceptionHandler в Program.cs).
+   В режиме разработки вместо неё ASP.NET Core показывает подробности ошибки. *@
 @model ErrorModel
 @{
-    ViewData["Title"] = "Error";
+    ViewData["Title"] = "Помилка";
 }
 
-<h1 class="text-danger">Error.</h1>
-<h2 class="text-danger">An error occurred while processing your request.</h2>
+<div class="shop-panel p-4 p-lg-5 mx-auto" style="max-width: 720px">
+    <h1 class="text-danger h3">Помилка</h1>
+    <p class="mb-3">Під час обробки запиту сталася помилка. Спробуйте ще раз трохи згодом.</p>
 
-@if (Model.ShowRequestId)
-{
-    <p>
-        <strong>Request ID:</strong> <code>@Model.RequestId</code>
+    @* Request ID — уникальный номер запроса. Пользователь может сообщить его
+       в поддержку, а разработчик по нему найдёт ошибку в логах. *@
+    @if (Model.ShowRequestId)
+    {
+        <p>
+            <strong>Ідентифікатор запиту:</strong> <code>@Model.RequestId</code>
+        </p>
+    }
+
+    <a class="btn btn-primary" asp-page="/Index">На головну</a>
+
+    @* Подсказка для разработчика: как увидеть подробности ошибки. *@
+    <hr class="my-4" />
+    <h2 class="h6 text-muted-shop">Для розробника</h2>
+    <p class="small text-muted-shop mb-0">
+        Щоб побачити подробиці помилки, запустіть застосунок у середовищі <strong>Development</strong>
+        (змінна оточення <strong>ASPNETCORE_ENVIRONMENT</strong> = <strong>Development</strong>).
+        На робочому сервері вмикати його не можна: користувачі побачать внутрішні дані застосунку.
     </p>
-}
-
-<h3>Development Mode</h3>
-<p>
-    Swapping to the <strong>Development</strong> environment displays detailed information about the error that occurred.
-</p>
-<p>
-    <strong>The Development environment shouldn't be enabled for deployed applications.</strong>
-    It can result in displaying sensitive information from exceptions to end users.
-    For local debugging, enable the <strong>Development</strong> environment by setting the <strong>ASPNETCORE_ENVIRONMENT</strong> environment variable to <strong>Development</strong>
-    and restarting the app.
-</p>
+</div>

@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Bookstore.Api.Models;
 using Bookstore.Api.Models.DTO;
 using Bookstore.Api.Models.Entity;
 using Bookstore.Api.Repositories.Interface;
@@ -21,7 +22,7 @@ namespace Bookstore.Api.Services
     //
     // Service не должен знать о HTTP-кодах:
     // Ok(), NotFound(), BadRequest() и т.д.
-    internal class AuthorService : IBaseService<AuthorDTO>
+    internal class AuthorService : IBaseService<AuthorDTO, AuthorPatchDTO>
     {
         // Repository отвечает за работу с базой данных.
         //
@@ -66,6 +67,11 @@ namespace Bookstore.Api.Services
             // а Entity используется для работы с базой данных.
             var authorEntity = _mapper.Map<Author>(entity);
 
+            // Id генерирует база, а не клиент.
+            // Если клиент прислал "id": 5, SQL Server откажется вставлять
+            // явное значение в identity-колонку, поэтому обнуляем его.
+            authorEntity.Id = 0;
+
             // Передаём Entity в Repository для сохранения в БД.
             var createdAuthor = await _repository.CreateAsync(authorEntity);
 
@@ -79,10 +85,10 @@ namespace Bookstore.Api.Services
         // Удаление автора по ID.
         //
         // Service получает только ID и передаёт его Repository.
-        public async Task<bool> DeleteAsync(int id)
+        public async Task<DeleteResult> DeleteAsync(int id)
         {
-            // Repository возвращает true, если удаление прошло успешно,
-            // и false, если удалить автора не получилось.
+            // Repository возвращает Deleted, NotFound или InUse
+            // (у автора есть книги). Controller выберет по нему HTTP-код.
             return await _repository.DeleteAsync(id);
         }
 
@@ -169,7 +175,7 @@ namespace Bookstore.Api.Services
         // которые были переданы клиентом.
         public async Task<AuthorDTO?> PatchAsync(
             int id,
-            AuthorDTO authorDTO)
+            AuthorPatchDTO authorDTO)
         {
             // Сначала получаем существующего автора.
             //
@@ -188,8 +194,8 @@ namespace Bookstore.Api.Services
 
             // Проверяем, было ли передано новое имя.
             //
-            // Если Name == null, значит в нашей упрощённой
-            // реализации PATCH имя менять не нужно.
+            // Если Name == null, значит клиент его не передал
+            // и имя менять не нужно (все поля AuthorPatchDTO необязательные).
             if (authorDTO.Name != null)
             {
                 author.Name = authorDTO.Name;

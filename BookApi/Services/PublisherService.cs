@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Bookstore.Api.Models;
 using Bookstore.Api.Models.DTO;
 using Bookstore.Api.Models.Entity;
 using Bookstore.Api.Repositories.Interface;
@@ -12,7 +13,7 @@ namespace Bookstore.Api.Services
     //
     // Service не должен знать о HTTP-кодах:
     // Ok(), NotFound(), BadRequest() и т.д.
-    internal class PublisherService : IBaseService<PublisherDTO>
+    internal class PublisherService : IBaseService<PublisherDTO, PublisherPatchDTO>
     {
         // Repository отвечает за работу с базой данных.
         private readonly IBaseRepository<Publisher> _repository;
@@ -34,13 +35,14 @@ namespace Bookstore.Api.Services
         public async Task<PublisherDTO?> CreateAsync(PublisherDTO entity)
         {
             var publisherEntity = _mapper.Map<Publisher>(entity);
+            publisherEntity.Id = 0; // Id генерирует база, а не клиент
             var createdPublisher = await _repository.CreateAsync(publisherEntity);
             return _mapper.Map<PublisherDTO>(createdPublisher);
         }
 
         // Удаление издательства по ID.
-        // Repository возвращает true, если удаление прошло успешно.
-        public async Task<bool> DeleteAsync(int id)
+        // Repository возвращает Deleted, NotFound или InUse (есть книги).
+        public async Task<DeleteResult> DeleteAsync(int id)
         {
             return await _repository.DeleteAsync(id);
         }
@@ -88,7 +90,7 @@ namespace Bookstore.Api.Services
         // Меняем только те свойства, которые были переданы клиентом.
         public async Task<PublisherDTO?> PatchAsync(
             int id,
-            PublisherDTO publisherDTO)
+            PublisherPatchDTO publisherDTO)
         {
             var publisher = await _repository.GetByIdAsync(id);
 

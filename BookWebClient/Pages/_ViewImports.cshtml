@@ -1,3 +1,15 @@
-﻿@using BookWebClient
+﻿@* _ViewImports.cshtml — общие настройки для ВСЕХ страниц в папке Pages.
+   То, что написано здесь, не нужно повторять в каждом .cshtml файле. *@
+
+@* Подключаем пространства имён, чтобы на страницах были видны классы проекта. *@
+@using BookWebClient
+@using Bookstore.WebClient.Models
+@using Bookstore.WebClient.Infrastructure
+
+@* Пространство имён для классов, которые ASP.NET Core генерирует из .cshtml-файлов. *@
 @namespace BookWebClient.Pages
+
+@* Включаем Tag Helpers — специальные атрибуты вроде asp-page="/Index"
+   или asp-append-version. ASP.NET Core превращает их в обычный HTML
+   (например, asp-page="/Index" становится href="/"). *@
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers

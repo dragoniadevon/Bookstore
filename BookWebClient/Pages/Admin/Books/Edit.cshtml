@@ -1,0 +1,88 @@
+@page "{id:int?}"
+@* "{id:int?}" — Id в адресе необязательный: без него форма создаёт новую книгу. *@
+@model BookWebClient.Pages.Admin.Books.EditModel
+@{
+    ViewData["Title"] = Model.IsNew ? "Нова книга" : "Редагування книги";
+}
+
+<nav aria-label="Навігація" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-page="Index">Керування книгами</a></li>
+        <li class="breadcrumb-item active" aria-current="page">@ViewData["Title"]</li>
+    </ol>
+</nav>
+
+<div class="shop-panel p-4 p-lg-5" style="max-width: 860px">
+    <h1 class="h3 mb-4">@ViewData["Title"]</h1>
+
+    <form method="post">
+        @* Id передаём скрытым полем: по нему при сохранении понятно, создавать или обновлять *@
+        <input type="hidden" asp-for="Input.Id" />
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+        <div class="row g-3">
+            <div class="col-12">
+                <label asp-for="Input.Title" class="form-label"></label>
+                <input asp-for="Input.Title" class="form-control" />
+                <span asp-validation-for="Input.Title" class="text-danger small"></span>
+            </div>
+
+            @* asp-items — заполнить выпадающий список пунктами из модели;
+               выбранный пункт подставится сам по значению Input.AuthorId *@
+            <div class="col-md-4">
+                <label asp-for="Input.AuthorId" class="form-label"></label>
+                <select asp-for="Input.AuthorId" asp-items="Model.Authors" class="form-select">
+                    <option value="0">— оберіть —</option>
+                </select>
+                <span asp-validation-for="Input.AuthorId" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Input.GenreId" class="form-label"></label>
+                <select asp-for="Input.GenreId" asp-items="Model.Genres" class="form-select">
+                    <option value="0">— оберіть —</option>
+                </select>
+                <span asp-validation-for="Input.GenreId" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Input.PublisherId" class="form-label"></label>
+                <select asp-for="Input.PublisherId" asp-items="Model.Publishers" class="form-select">
+                    <option value="0">— оберіть —</option>
+                </select>
+                <span asp-validation-for="Input.PublisherId" class="text-danger small"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="Input.Price" class="form-label"></label>
+                <input asp-for="Input.Price" class="form-control" type="number" step="0.01" min="0" />
+                <span asp-validation-for="Input.Price" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Input.StockQuantity" class="form-label"></label>
+                <input asp-for="Input.StockQuantity" class="form-control" type="number" min="0" />
+                <span asp-validation-for="Input.StockQuantity" class="text-danger small"></span>
+            </div>
+
+            <div class="col-12">
+                <label asp-for="Input.ImageUrl" class="form-label"></label>
+                <input asp-for="Input.ImageUrl" class="form-control" placeholder="https://… (необов'язково)" />
+                <div class="form-text">Якщо посилання немає, обкладинку буде намальовано автоматично.</div>
+                <span asp-validation-for="Input.ImageUrl" class="text-danger small"></span>
+            </div>
+
+            <div class="col-12">
+                <label asp-for="Input.Description" class="form-label"></label>
+                <textarea asp-for="Input.Description" class="form-control" rows="4"></textarea>
+                <span asp-validation-for="Input.Description" class="text-danger small"></span>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-primary px-4">@(Model.IsNew ? "Додати" : "Зберегти")</button>
+            <a class="btn btn-outline-secondary" asp-page="Index">Скасувати</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

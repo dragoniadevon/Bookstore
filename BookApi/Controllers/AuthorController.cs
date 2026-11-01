@@ -1,4 +1,5 @@
-﻿using Bookstore.Api.Models.DTO;
+﻿using Bookstore.Api.Models;
+using Bookstore.Api.Models.DTO;
 using Bookstore.Api.Services.Interface;
 using Microsoft.AspNetCore.Mvc;
 
@@ -34,13 +35,13 @@ namespace Bookstore.Api.Controllers
         // - передаёт данные в Service;
         // - выбирает HTTP status code;
         // - возвращает результат клиенту.
-        private readonly IBaseService<AuthorDTO> _authorService;
+        private readonly IBaseService<AuthorDTO, AuthorPatchDTO> _authorService;
 
         // Dependency Injection передаёт необходимый Service в Controller.
         //
         // Мы не создаём Service через new AuthorService(...),
         // потому что ASP.NET Core сам создаёт и передаёт нужную реализацию.
-        public AuthorController(IBaseService<AuthorDTO> authorService)
+        public AuthorController(IBaseService<AuthorDTO, AuthorPatchDTO> authorService)
         {
             _authorService = authorService;
         }
@@ -134,10 +135,11 @@ namespace Bookstore.Api.Controllers
             // При успешном создании ресурса правильный HTTP-код —
             // 201 Created.
             //
-            // В более полноценном варианте здесь желательно использовать
-            // CreatedAtAction(), чтобы вернуть созданный объект
-            // и адрес, по которому его можно получить.
-            return Created();
+            // CreatedAtAction() возвращает:
+            // - созданный объект (уже с Id из базы) в теле ответа;
+            // - заголовок Location с адресом, по которому его можно получить
+            //   (GET /api/Author/{id}). nameof(GetById) — имя метода без опечаток.
+            return CreatedAtAction(nameof(GetById), new { id = author.Id }, author);
         }
 
 
@@ -150,23 +152,19 @@ namespace Bookstore.Api.Controllers
         {
             // Передаём ID автора в Service.
             //
-            // Service возвращает true, если удаление прошло успешно.
-            bool isAuthorDeleted = await _authorService.DeleteAsync(id);
+            // Service возвращает результат удаления: Deleted, NotFound или InUse.
+            var result = await _authorService.DeleteAsync(id);
 
-            // Если удалить автора не удалось.
-            //
-            // В зависимости от реализации Service здесь может быть
-            // более подходящим статус 404 Not Found, если автора
-            // с таким ID вообще не существует.
-            if (!isAuthorDeleted)
+            // switch-выражение выбирает HTTP-ответ по результату:
+            // - Deleted  -> 204 No Content: удалено, данные возвращать не нужно;
+            // - InUse    -> 409 Conflict: у автора есть книги, удалять нельзя;
+            // - NotFound -> 404 Not Found: автора с таким ID нет.
+            return result switch
             {
-                return BadRequest();
-            }
-
-            // 204 No Content означает:
-            // операция успешно выполнена,
-            // но возвращать данные клиенту не нужно.
-            return NoContent();
+                DeleteResult.Deleted => NoContent(),
+                DeleteResult.InUse => Conflict("Неможливо видалити автора: у нього є книги."),
+                _ => NotFound()
+            };
         }
 
 
@@ -234,10 +232,13 @@ namespace Bookstore.Api.Controllers
         // }
         //
         // Остальные свойства автора при этом не должны изменяться.
+        //
+        // Тело запроса — AuthorPatchDTO: все поля в нём необязательные,
+        // поэтому можно прислать только то, что меняется.
         [HttpPatch("{id}")]
         public async Task<IActionResult> PatchAsync(
             int id,
-            [FromBody] AuthorDTO author)
+            [FromBody] AuthorPatchDTO author)
         {
             // Передаём ID и данные в Service.
             //

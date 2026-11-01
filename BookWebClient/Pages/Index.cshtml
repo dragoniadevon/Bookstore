@@ -1,10 +1,176 @@
 ﻿@page
+@* Index.cshtml — главная страница: каталог книг (адрес "/").
+
+   Razor-страница состоит из двух файлов:
+   - Index.cshtml    — разметка (HTML + вставки C# через @)
+   - Index.cshtml.cs — код страницы (класс IndexModel): загрузка данных, обработка форм
+
+   @page (первая строка) — этот файл является страницей, на него можно перейти по адресу.
+   Эта директива должна стоять в самом начале файла. *@
 @model IndexModel
 @{
-    ViewData["Title"] = "Home page";
+    ViewData["Title"] = "Каталог";
+    var returnUrl = HttpContext.Request.Path + HttpContext.Request.QueryString;
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+@* ---------- Баннер с поиском ---------- *@
+<section class="hero mb-4">
+    <div class="row align-items-center g-4">
+        <div class="col-lg-7">
+            <h1 class="mb-2">Книги, які хочеться перечитувати</h1>
+            <p class="text-muted-shop mb-4">
+                Класика, фантастика та улюблені романи. Доставимо замовлення вже завтра.
+            </p>
+
+            @* Форма поиска отправляет GET-запрос: параметры попадают в адрес (/?q=...),
+               поэтому ссылку с результатами можно сохранить или отправить другу.
+               Скрытые поля сохраняют уже выбранные фильтры. *@
+            <form method="get" class="search-box">
+                <input type="hidden" name="genre" value="@Model.Genre" />
+                <input type="hidden" name="author" value="@Model.Author" />
+                <input type="hidden" name="sort" value="@Model.Sort" />
+                <div class="input-group input-group-lg">
+                    <input type="search" class="form-control" name="q" value="@Model.Q"
+                           placeholder="Назва книги або автор" aria-label="Пошук" />
+                    <button class="btn btn-primary px-4" type="submit">Знайти</button>
+                </div>
+            </form>
+        </div>
+        <div class="col-lg-5 d-none d-lg-block">
+            @* Декоративная "стопка" обложек из первых книг каталога *@
+            <div class="d-flex justify-content-end gap-3">
+                @foreach (var b in Model.Catalog.Books.Take(3))
+                {
+                    <div style="width: 110px">
+                        <partial name="_BookCover" model="@(new BookCoverModel(b.Id, b.Title, b.AuthorName, b.ImageUrl))" />
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</section>
+
+@if (Model.Catalog.HasError)
+{
+    @* Источник данных не ответил — объясняем и предлагаем переключиться на мок *@
+    <div class="alert alert-warning d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div>
+            <strong>Не вдалося завантажити книги з Bookstore.Api.</strong>
+            Перевірте, що API запущено і він доступний. <span class="small text-muted-shop">(@Model.Catalog.ErrorMessage)</span>
+        </div>
+        <form method="post" asp-page="/DataSource">
+            <input type="hidden" name="returnUrl" value="@returnUrl" />
+            <button type="submit" name="mode" value="@DataSourceMode.Mock" class="btn btn-dark text-nowrap">
+                Показати мок-дані
+            </button>
+        </form>
+    </div>
+}
+
+<div class="row g-4">
+    @* ---------- Фильтры (слева) ---------- *@
+    <aside class="col-lg-3">
+        <form method="get" class="shop-panel p-3">
+            <input type="hidden" name="q" value="@Model.Q" />
+
+            <h2 class="h6 text-uppercase text-muted-shop mb-2">Жанри</h2>
+            <div class="list-group filter-list mb-3">
+                <a class="list-group-item list-group-item-action @(Model.Genre == null ? "active" : "")"
+                   asp-page="/Index" asp-route-q="@Model.Q" asp-route-author="@Model.Author" asp-route-sort="@Model.Sort">Усі жанри</a>
+                @foreach (var g in Model.Catalog.Genres)
+                {
+                    <a class="list-group-item list-group-item-action @(Model.Genre == g.Id ? "active" : "")"
+                       asp-page="/Index" asp-route-genre="@g.Id" asp-route-q="@Model.Q" asp-route-author="@Model.Author" asp-route-sort="@Model.Sort">@g.Name</a>
+                }
+            </div>
+            <input type="hidden" name="genre" value="@Model.Genre" />
+
+            <label class="form-label h6 text-uppercase text-muted-shop" for="author">Автор</label>
+            <select class="form-select mb-3" id="author" name="author">
+                <option value="">Усі автори</option>
+                @foreach (var a in Model.Catalog.Authors)
+                {
+                    <option value="@a.Id" selected="@(Model.Author == a.Id)">@a.Name</option>
+                }
+            </select>
+
+            <label class="form-label h6 text-uppercase text-muted-shop" for="sort">Сортування</label>
+            <select class="form-select mb-3" id="sort" name="sort">
+                <option value="" selected="@(string.IsNullOrEmpty(Model.Sort))">За замовчуванням</option>
+                <option value="price" selected="@(Model.Sort == "price")">Спочатку дешевші</option>
+                <option value="price_desc" selected="@(Model.Sort == "price_desc")">Спочатку дорожчі</option>
+                <option value="title" selected="@(Model.Sort == "title")">За назвою</option>
+            </select>
+
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="inStock" name="inStock" value="true" checked="@Model.InStock" />
+                <label class="form-check-label" for="inStock">Лише в наявності</label>
+            </div>
+
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary">Застосувати</button>
+                @if (Model.HasFilters)
+                {
+                    <a class="btn btn-link" asp-page="/Index">Скинути фільтри</a>
+                }
+            </div>
+        </form>
+    </aside>
+
+    @* ---------- Сетка книг ---------- *@
+    <section class="col-lg-9">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="h4 mb-0">@(Model.HasFilters ? "Результати" : "Усі книги")</h2>
+            <span class="text-muted-shop">Знайдено: @Model.Books.Count.Plural("книга", "книги", "книг")</span>
+        </div>
+
+        @if (Model.Books.Count == 0 && !Model.Catalog.HasError)
+        {
+            <div class="shop-panel empty-state">
+                <div class="empty-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+                </div>
+                <h3 class="h5">Нічого не знайшлося</h3>
+                <p class="text-muted-shop">Спробуйте змінити запит або скинути фільтри.</p>
+                <a class="btn btn-outline-primary" asp-page="/Index">Показати всі книги</a>
+            </div>
+        }
+
+        @* row-cols-* — сколько карточек в ряд на экранах разной ширины:
+           2 на телефоне, 3 на планшете, 4 на большом экране. *@
+        <div class="row row-cols-2 row-cols-md-3 row-cols-xl-4 g-3">
+            @foreach (var book in Model.Books)
+            {
+                <div class="col">
+                    <article class="book-card @(book.InStock ? "" : "out-of-stock")">
+                        <a class="cover-wrap d-block" asp-page="/Books/Details" asp-route-id="@book.Id">
+                            <partial name="_BookCover" model="@(new BookCoverModel(book.Id, book.Title, book.AuthorName, book.ImageUrl))" />
+                        </a>
+                        <div class="card-body">
+                            <div class="mb-2"><span class="genre-chip">@book.GenreName</span></div>
+                            <a class="book-title mb-1" asp-page="/Books/Details" asp-route-id="@book.Id">@book.Title</a>
+                            <div class="small text-muted-shop mb-3">@book.AuthorName</div>
+
+                            <div class="mt-auto d-flex justify-content-between align-items-center gap-2">
+                                <span class="book-price">@book.Price.ToUah()</span>
+                                @if (book.InStock)
+                                {
+                                    @* asp-page-handler="AddToCart" — форма вызовет OnPostAddToCartAsync *@
+                                    <form method="post" asp-page="/Index" asp-page-handler="AddToCart">
+                                        <input type="hidden" name="bookId" value="@book.Id" />
+                                        <input type="hidden" name="returnUrl" value="@returnUrl" />
+                                        <button type="submit" class="btn btn-primary btn-sm">До кошика</button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <span class="small text-muted-shop">Немає в наявності</span>
+                                }
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            }
+        </div>
+    </section>
 </div>

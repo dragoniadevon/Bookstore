@@ -1,4 +1,5 @@
 ﻿using Bookstore.Api.Data;
+using Bookstore.Api.Models;
 using Bookstore.Api.Models.Entity;
 using Bookstore.Api.Repositories.Interface;
 using Microsoft.EntityFrameworkCore;
@@ -35,18 +36,24 @@ namespace Bookstore.Api.Repositories
 
         // DELETE
         // Удаляет издательство по Id.
-        public async Task<bool> DeleteAsync(int id)
+        public async Task<DeleteResult> DeleteAsync(int id)
         {
             var publisher = await _publishers.FirstOrDefaultAsync(x => x.Id == id);
 
-            if (publisher != null)
+            if (publisher == null)
             {
-                _publishers.Remove(publisher);
-                await _dbContext.SaveChangesAsync();
-                return true;
+                return DeleteResult.NotFound;
             }
 
-            return false;
+            // Издательство с книгами удалять нельзя (ограничение Restrict в базе).
+            if (await _dbContext.Books.AnyAsync(b => b.PublisherId == id))
+            {
+                return DeleteResult.InUse;
+            }
+
+            _publishers.Remove(publisher);
+            await _dbContext.SaveChangesAsync();
+            return DeleteResult.Deleted;
         }
 
         // GET ALL
@@ -79,7 +86,7 @@ namespace Bookstore.Api.Repositories
             updateObj.Name = obj.Name ?? updateObj.Name;
             updateObj.Description = obj.Description ?? updateObj.Description;
 
-            updateObj.ModifiedAt = DateTime.UtcNow;
+            // ModifiedAt проставит AppDbContext при сохранении.
 
             await _dbContext.SaveChangesAsync();
 

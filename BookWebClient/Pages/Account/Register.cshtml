@@ -1,0 +1,49 @@
+@page
+@* Страница регистрации (адрес "/Account/Register"). *@
+@model BookWebClient.Pages.Account.RegisterModel
+@{
+    ViewData["Title"] = "Реєстрація";
+}
+
+<div class="auth-card">
+    <div class="shop-panel p-4 p-md-5">
+        <h1 class="h3 mb-1">Реєстрація</h1>
+        <p class="text-muted-shop mb-4">Створіть акаунт за хвилину.</p>
+
+        <form method="post">
+            <input type="hidden" asp-for="ReturnUrl" />
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+            <div class="mb-3">
+                <label asp-for="Input.Name" class="form-label"></label>
+                <input asp-for="Input.Name" class="form-control" autocomplete="name" autofocus />
+                <span asp-validation-for="Input.Name" class="text-danger small"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.Email" class="form-label"></label>
+                <input asp-for="Input.Email" class="form-control" autocomplete="email" />
+                <span asp-validation-for="Input.Email" class="text-danger small"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.Password" class="form-label"></label>
+                <input asp-for="Input.Password" class="form-control" autocomplete="new-password" />
+                <span asp-validation-for="Input.Password" class="text-danger small"></span>
+            </div>
+            <div class="mb-4">
+                <label asp-for="Input.ConfirmPassword" class="form-label"></label>
+                <input asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" />
+                <span asp-validation-for="Input.ConfirmPassword" class="text-danger small"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-lg w-100">Зареєструватися</button>
+        </form>
+
+        <p class="text-center mt-4 mb-0">
+            Вже маєте акаунт? <a asp-page="/Account/Login" asp-route-returnUrl="@Model.ReturnUrl">Увійдіть</a>
+        </p>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

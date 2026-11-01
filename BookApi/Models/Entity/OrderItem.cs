@@ -2,25 +2,30 @@
 
 namespace Bookstore.Api.Models.Entity
 {
+    // Сущность OrderItem — одна позиция в заказе.
+    //
+    // Похожа на CartItem, но с важным отличием: здесь хранится UnitPrice —
+    // цена книги В МОМЕНТ покупки. Если завтра цена книги изменится,
+    // старые заказы должны показывать ту сумму, которую человек реально заплатил.
     public class OrderItem : BaseEntity
     {
-    
-        // Order ID
+
+        // Внешний ключ: Id заказа
         public int OrderId { get; set; }
 
-        // Order
+        // Навигационное свойство: заказ, к которому относится позиция
         public Order Order { get; set; } = null!;
 
-        // Book ID
+        // Внешний ключ: Id купленной книги
         public int BookId { get; set; }
 
-        // Book
+        // Навигационное свойство: купленная книга
         public Book Book { get; set; } = null!;
 
-        // Количество
+        // Сколько экземпляров купили
         public int Quantity { get; set; }
 
-        // Цена за единицу
+        // Цена за один экземпляр на момент покупки
         public decimal UnitPrice { get; set; }
     }
 }

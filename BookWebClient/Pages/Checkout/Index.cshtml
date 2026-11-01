@@ -1,0 +1,117 @@
+@page
+@* Оформление заказа и оплата (адрес "/Checkout"). *@
+@model BookWebClient.Pages.Checkout.IndexModel
+@{
+    ViewData["Title"] = "Оформлення замовлення";
+}
+
+<nav aria-label="Навігація" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-page="/Cart/Index">Кошик</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Оформлення</li>
+    </ol>
+</nav>
+
+<h1 class="mb-4">Оформлення замовлення</h1>
+
+@* novalidate не ставим: пусть браузер и jQuery Validation проверяют поля ещё до отправки *@
+<form method="post">
+    <div class="row g-4">
+        <div class="col-lg-7">
+            @* asp-validation-summary="ModelOnly" — общие ошибки (например, "Банк отклонил платёж") *@
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+            <div class="shop-panel p-4 mb-4">
+                <h2 class="h5 mb-3">1. Отримувач і доставка</h2>
+                <div class="row g-3">
+                    @* asp-for связывает поле с Input.FullName: подставляет name, id, значение,
+                       а label берёт текст из [Display(Name = ...)] *@
+                    <div class="col-md-6">
+                        <label asp-for="Input.FullName" class="form-label"></label>
+                        <input asp-for="Input.FullName" class="form-control" autocomplete="name" />
+                        <span asp-validation-for="Input.FullName" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.Phone" class="form-label"></label>
+                        <input asp-for="Input.Phone" class="form-control" placeholder="+380 67 000 00 00" autocomplete="tel" />
+                        <span asp-validation-for="Input.Phone" class="text-danger small"></span>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="Input.Address" class="form-label"></label>
+                        <input asp-for="Input.Address" class="form-control" placeholder="Місто, вулиця, будинок, квартира" autocomplete="street-address" />
+                        <span asp-validation-for="Input.Address" class="text-danger small"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="shop-panel p-4">
+                <h2 class="h5 mb-3">2. Оплата карткою</h2>
+
+                <div class="alert alert-light border small test-cards">
+                    <strong>Це демо-оплата</strong>, гроші не списуються. Тестові картки:<br />
+                    <code>4242 4242 4242 4242</code> — успішно,
+                    <code>4000 0000 0000 0002</code> — відмова банку,
+                    <code>4000 0000 0000 9995</code> — недостатньо коштів.
+                    Термін — будь-який майбутній, CVV — будь-які 3 цифри.
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label asp-for="Input.CardNumber" class="form-label"></label>
+                        <input asp-for="Input.CardNumber" class="form-control" placeholder="0000 0000 0000 0000"
+                               inputmode="numeric" autocomplete="cc-number" />
+                        <span asp-validation-for="Input.CardNumber" class="text-danger small"></span>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="Input.CardHolder" class="form-label"></label>
+                        <input asp-for="Input.CardHolder" class="form-control" placeholder="IVAN IVANOV" autocomplete="cc-name" />
+                        <span asp-validation-for="Input.CardHolder" class="text-danger small"></span>
+                    </div>
+                    <div class="col-6">
+                        <label asp-for="Input.Expiry" class="form-label"></label>
+                        <input asp-for="Input.Expiry" class="form-control" placeholder="ММ/РР" autocomplete="cc-exp" />
+                        <span asp-validation-for="Input.Expiry" class="text-danger small"></span>
+                    </div>
+                    <div class="col-6">
+                        <label asp-for="Input.Cvv" class="form-label"></label>
+                        <input asp-for="Input.Cvv" type="password" class="form-control" placeholder="•••"
+                               inputmode="numeric" autocomplete="cc-csc" />
+                        <span asp-validation-for="Input.Cvv" class="text-danger small"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @* ---------- Состав заказа ---------- *@
+        <div class="col-lg-5">
+            <div class="shop-panel p-4 position-sticky" style="top: 6rem">
+                <h2 class="h5 mb-3">Ваше замовлення</h2>
+                @foreach (var item in Model.Items)
+                {
+                    <div class="d-flex gap-3 align-items-center mb-3">
+                        <partial name="_BookCover" model="@(new BookCoverModel(item.BookId, item.Title, item.AuthorName, item.ImageUrl, "cover-sm"))" />
+                        <div class="flex-grow-1 small">
+                            <div class="fw-semibold">@item.Title</div>
+                            <div class="text-muted-shop">@item.Quantity × @item.Price.ToUah()</div>
+                        </div>
+                        <div class="fw-semibold">@item.Total.ToUah()</div>
+                    </div>
+                }
+                <div class="summary-row summary-total">
+                    <span>До сплати</span>
+                    <span>@Model.Total.ToUah()</span>
+                </div>
+
+                @* Кнопка блокируется после нажатия (site.js), чтобы не оплатить дважды *@
+                <button type="submit" class="btn btn-primary btn-lg w-100 mt-3" data-loading-text="Проводимо оплату…">
+                    Сплатити @Model.Total.ToUah()
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+
+@* Проверка полей прямо в браузере, до отправки формы *@
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

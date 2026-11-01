@@ -1,4 +1,6 @@
-﻿namespace Bookstore.Api.Repositories.Interface
+﻿using Bookstore.Api.Models;
+
+namespace Bookstore.Api.Repositories.Interface
 {
     // Общий интерфейс для репозиториев.
     //
@@ -36,8 +38,11 @@
 
         // Удалить сущность.
         //
-        // Возвращает true, если сущность была найдена и удалена,
-        // и false, если сущность не найдена.
-        public Task<bool> DeleteAsync(int id);
+        // Возвращает:
+        // - Deleted  — сущность найдена и удалена;
+        // - NotFound — сущности с таким Id нет;
+        // - InUse    — на сущность ссылаются другие записи
+        //              (например, у автора есть книги), удалять нельзя.
+        public Task<DeleteResult> DeleteAsync(int id);
     }
 }

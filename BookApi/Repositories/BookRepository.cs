@@ -1,4 +1,5 @@
 ﻿using Bookstore.Api.Data;
+using Bookstore.Api.Models;
 using Bookstore.Api.Models.Entity;
 using Bookstore.Api.Repositories.Interface;
 using Microsoft.EntityFrameworkCore;
@@ -50,18 +51,26 @@ namespace Bookstore.Api.Repositories
         }
 
         // Удалить книгу по ID.
-        // false, если книги нет (Controller вернёт 404).
-        public async Task<bool> DeleteAsync(int id)
+        // NotFound — книги нет (Controller вернёт 404).
+        // InUse — книга есть в оформленных заказах: история покупок
+        // должна сохраниться, поэтому удалять её нельзя (Controller вернёт 409).
+        // Из корзин книга удалится сама (каскадное удаление CartItem).
+        public async Task<DeleteResult> DeleteAsync(int id)
         {
             var book = await _context.Books.FindAsync(id);
             if (book == null)
             {
-                return false;
+                return DeleteResult.NotFound;
+            }
+
+            if (await _context.OrderItems.AnyAsync(i => i.BookId == id))
+            {
+                return DeleteResult.InUse;
             }
 
             _context.Books.Remove(book);
             await _context.SaveChangesAsync();
-            return true;
+            return DeleteResult.Deleted;
         }
     }
 }

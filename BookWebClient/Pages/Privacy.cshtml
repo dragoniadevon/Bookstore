@@ -1,8 +1,18 @@
 ﻿@page
+@* Privacy.cshtml — страница политики конфиденциальности (адрес "/Privacy"). *@
 @model PrivacyModel
 @{
-    ViewData["Title"] = "Privacy Policy";
+    ViewData["Title"] = "Конфіденційність";
 }
-<h1>@ViewData["Title"]</h1>
 
-<p>Use this page to detail your site's privacy policy.</p>
+<div class="shop-panel p-4 p-lg-5" style="max-width: 760px">
+    @* @ViewData["Title"] — выводим значение из C# прямо в HTML. *@
+    <h1 class="mb-3">@ViewData["Title"]</h1>
+    <p>Це навчальний демонстраційний магазин. Справжні платежі не проводяться.</p>
+    <ul>
+        <li>Користувачі та замовлення зберігаються лише в пам'яті застосунку й видаляються після його перезапуску.</li>
+        <li>Паролі зберігаються у вигляді хешу, а не відкритим текстом.</li>
+        <li>Номер картки не зберігається — у замовленні залишаються лише останні 4 цифри.</li>
+        <li>Сайт використовує cookie для входу в акаунт і для кошика.</li>
+    </ul>
+</div>

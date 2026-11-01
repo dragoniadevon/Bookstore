@@ -1,4 +1,5 @@
 ﻿using Bookstore.Api.Data;
+using Bookstore.Api.Models;
 using Bookstore.Api.Models.Entity;
 using Bookstore.Api.Repositories.Interface;
 using Microsoft.EntityFrameworkCore;
@@ -75,28 +76,37 @@ namespace Bookstore.Api.Repositories
         // DELETE
         //
         // Удаляет автора по Id.
-        public async Task<bool> DeleteAsync(int id)
+        public async Task<DeleteResult> DeleteAsync(int id)
         {
             // Сначала ищем существующего автора.
             var author = await _authors.FirstOrDefaultAsync(x => x.Id == id);
 
-            // Если автор найден — удаляем его.
-            if (author != null)
+            // Если автора нет, удалить его невозможно.
+            if (author == null)
             {
-                // Помечаем Entity на удаление.
-                _authors.Remove(author);
-
-                // Сохраняем изменения.
-                //
-                // EF Core сформирует SQL DELETE.
-                await _dbContext.SaveChangesAsync();
-
-                return true;
+                return DeleteResult.NotFound;
             }
 
-            // Если автора нет,
-            // удалить его невозможно.
-            return false;
+            // Если у автора есть книги, удалять нельзя:
+            // в базе стоит ограничение Restrict (см. AppDbContext),
+            // и SaveChangesAsync упал бы с ошибкой. Проверяем заранее
+            // и сообщаем понятную причину.
+            //
+            // AnyAsync — "есть ли хотя бы одна такая запись" (SQL EXISTS).
+            if (await _dbContext.Books.AnyAsync(b => b.AuthorId == id))
+            {
+                return DeleteResult.InUse;
+            }
+
+            // Помечаем Entity на удаление.
+            _authors.Remove(author);
+
+            // Сохраняем изменения.
+            //
+            // EF Core сформирует SQL DELETE.
+            await _dbContext.SaveChangesAsync();
+
+            return DeleteResult.Deleted;
         }
 
 
@@ -149,8 +159,7 @@ namespace Bookstore.Api.Repositories
             // оставляем старое значение.
             updateObj.Name = obj.Name ?? updateObj.Name;
 
-            // Обновляем дату изменения.
-            updateObj.ModifiedAt = DateTime.UtcNow;
+            // Дату изменения (ModifiedAt) проставит AppDbContext при сохранении.
 
             // Здесь можно добавить остальные поля.
             //

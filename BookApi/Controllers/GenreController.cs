@@ -1,4 +1,5 @@
-﻿using Bookstore.Api.Models.DTO;
+﻿using Bookstore.Api.Models;
+using Bookstore.Api.Models.DTO;
 using Bookstore.Api.Services.Interface;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,9 +13,9 @@ namespace Bookstore.Api.Controllers
     {
         // Controller отвечает только за HTTP: вызывает Service
         // и выбирает код ответа.
-        private readonly IBaseService<GenreDTO> _genreService;
+        private readonly IBaseService<GenreDTO, GenrePatchDTO> _genreService;
 
-        public GenreController(IBaseService<GenreDTO> genreService)
+        public GenreController(IBaseService<GenreDTO, GenrePatchDTO> genreService)
         {
             _genreService = genreService;
         }
@@ -69,9 +70,9 @@ namespace Bookstore.Api.Controllers
             return Ok(updated);
         }
 
-        // PATCH /api/Genre/{id} - частичное обновление.
+        // PATCH /api/Genre/{id} - частичное обновление (поля GenrePatchDTO необязательные).
         [HttpPatch("{id}")]
-        public async Task<IActionResult> PatchAsync(int id, [FromBody] GenreDTO genre)
+        public async Task<IActionResult> PatchAsync(int id, [FromBody] GenrePatchDTO genre)
         {
             var updated = await _genreService.PatchAsync(id, genre);
             if (updated == null)
@@ -82,17 +83,17 @@ namespace Bookstore.Api.Controllers
             return Ok(updated);
         }
 
-        // DELETE /api/Genre/{id} - 204 или 404.
+        // DELETE /api/Genre/{id} - 204, 409 (у жанра есть книги) или 404.
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            bool isDeleted = await _genreService.DeleteAsync(id);
-            if (!isDeleted)
+            var result = await _genreService.DeleteAsync(id);
+            return result switch
             {
-                return NotFound();
-            }
-
-            return NoContent();
+                DeleteResult.Deleted => NoContent(),
+                DeleteResult.InUse => Conflict("Неможливо видалити жанр: у ньому є книги."),
+                _ => NotFound()
+            };
         }
     }
 }

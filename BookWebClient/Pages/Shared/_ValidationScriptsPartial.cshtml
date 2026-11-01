@@ -1,2 +1,11 @@
-﻿<script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+﻿@* _ValidationScriptsPartial — скрипты для проверки форм прямо в браузере.
+
+   Они читают атрибуты валидации у модели (например, [Required]) и показывают
+   ошибку ещё ДО отправки формы на сервер — пользователю не нужно ждать.
+   Проверка на сервере при этом всё равно обязательна: скрипты в браузере
+   легко отключить.
+
+   Подключается на странице с формой так:
+   @section Scripts { <partial name="_ValidationScriptsPartial" /> } *@
+<script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
 <script src="~/lib/jquery-validation-unobtrusive/dist/jquery.validate.unobtrusive.min.js"></script>

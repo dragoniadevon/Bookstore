@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Bookstore.Api.Models;
 using Bookstore.Api.Models.DTO;
 using Bookstore.Api.Models.Entity;
 using Bookstore.Api.Repositories.Interface;
@@ -9,14 +10,16 @@ namespace Bookstore.Api.Services
     // Service содержит логику работы с книгами.
     // Получает DTO от Controller, работает с Entity через Repository
     // и возвращает DTO. О HTTP-кодах Service ничего не знает:
-    // "не найдено" и "ошибка" он сообщает через null / false.
-    internal class BookService : IBaseService<BookDTO>
+    // "не найдено" и "ошибка" он сообщает через null / DeleteResult.
+    internal class BookService : IBaseService<BookDTO, BookPatchDTO>
     {
         // Repository для книг.
         private readonly IBaseRepository<Book> _repository;
 
-        // Repository для авторов и жанров: нужны, чтобы проверять,
-        // что AuthorId и GenreId из запроса существуют.
+        // Repository для авторов, жанров и издательств: нужны, чтобы проверять,
+        // что AuthorId, GenreId и PublisherId из запроса существуют.
+        // Без проверки база всё равно не дала бы сохранить книгу с несуществующим
+        // автором (внешний ключ), но выдала бы непонятную ошибку 500 вместо 400.
         private readonly IBaseRepository<Author> _authorRepository;
         private readonly IBaseRepository<Genre> _genreRepository;
         private readonly IBaseRepository<Publisher> _publisherRepository;
@@ -59,7 +62,7 @@ namespace Bookstore.Api.Services
         }
 
         // Создать книгу.
-        // null = указанный автор или жанр не существует (Controller вернёт 400).
+        // null = указанный автор, жанр или издательство не существует (Controller вернёт 400).
         public async Task<BookDTO?> CreateAsync(BookDTO entity)
         {
             if (!await AuthorGenrePublisherExistAsync(entity.AuthorId, entity.GenreId, entity.PublisherId))
@@ -76,7 +79,7 @@ namespace Bookstore.Api.Services
         }
 
         // Полное обновление (PUT).
-        // null = книга не найдена ИЛИ автор/жанр не существуют.
+        // null = книга не найдена ИЛИ автор/жанр/издательство не существуют.
         public async Task<BookDTO?> UpdateAsync(BookDTO entity)
         {
             var book = await _repository.GetByIdAsync(entity.Id);
@@ -99,8 +102,9 @@ namespace Bookstore.Api.Services
         }
 
         // Частичное обновление (PATCH): меняем только переданные поля.
-        // "Не передано" = null / пустая строка / 0.
-        public async Task<BookDTO?> PatchAsync(int id, BookDTO dto)
+        // "Не передано" = null (все поля BookPatchDTO nullable).
+        // Поэтому теперь можно, например, выставить остаток 0 или цену 0.
+        public async Task<BookDTO?> PatchAsync(int id, BookPatchDTO dto)
         {
             var book = await _repository.GetByIdAsync(id);
             if (book == null)
@@ -108,43 +112,47 @@ namespace Bookstore.Api.Services
                 return null;
             }
 
-            // Если меняется автор или жанр, сначала проверяем, что они есть.
-            if (dto.AuthorId > 0)
+            // Если меняется автор, жанр или издательство, сначала проверяем, что они есть.
+            // "is int x" — проверка "не null" и сразу получение значения в переменную x.
+            if (dto.AuthorId is int authorId)
             {
-                if (await _authorRepository.GetByIdAsync(dto.AuthorId) == null) return null;
-                book.AuthorId = dto.AuthorId;
+                if (await _authorRepository.GetByIdAsync(authorId) == null) return null;
+                book.AuthorId = authorId;
             }
 
-            if (dto.GenreId > 0)
+            if (dto.GenreId is int genreId)
             {
-                if (await _genreRepository.GetByIdAsync(dto.GenreId) == null) return null;
-                book.GenreId = dto.GenreId;
+                if (await _genreRepository.GetByIdAsync(genreId) == null) return null;
+                book.GenreId = genreId;
             }
 
-            if (dto.PublisherId > 0)
+            if (dto.PublisherId is int publisherId)
             {
-                if (await _publisherRepository.GetByIdAsync(dto.PublisherId) == null) return null;
-                book.PublisherId = dto.PublisherId;
+                if (await _publisherRepository.GetByIdAsync(publisherId) == null) return null;
+                book.PublisherId = publisherId;
             }
 
             // Остальные поля обновляем, только если они переданы.
-            if (!string.IsNullOrEmpty(dto.Title)) book.Title = dto.Title;
+            if (dto.Title != null) book.Title = dto.Title;
             if (dto.Description != null) book.Description = dto.Description;
-            if (dto.Price > 0) book.Price = dto.Price;
-            if (dto.StockQuantity > 0) book.StockQuantity = dto.StockQuantity;
+            if (dto.Price is decimal price) book.Price = price;
+            if (dto.StockQuantity is int stock) book.StockQuantity = stock;
             if (dto.ImageUrl != null) book.ImageUrl = dto.ImageUrl;
 
             var updated = await _repository.UpdateAsync(book);
             return _mapper.Map<BookDTO>(updated);
         }
 
-        // Удалить книгу. false = книга не найдена (Controller вернёт 404).
-        public async Task<bool> DeleteAsync(int id)
+        // Удалить книгу: Deleted, NotFound или InUse (книга есть в заказах).
+        public async Task<DeleteResult> DeleteAsync(int id)
         {
             return await _repository.DeleteAsync(id);
         }
 
-        // Проверка: существуют ли и автор, и жанр с такими ID.
+        // Проверка: существуют ли автор, жанр и издательство с такими ID.
+        // private — метод нужен только внутри этого класса, снаружи его не видно.
+        // && проверяет условия по очереди и останавливается на первом false,
+        // поэтому лишних запросов к базе не будет.
         private async Task<bool> AuthorGenrePublisherExistAsync(int authorId, int genreId, int publisherId)
         {
             return await _authorRepository.GetByIdAsync(authorId) != null

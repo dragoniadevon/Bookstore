@@ -1,0 +1,22 @@
+@* Обложка книги. Используется в каталоге, на странице книги и в корзине.
+
+   Если у книги есть ImageUrl — показываем картинку.
+   Если нет — рисуем обложку на CSS: цвет выбираем по Id книги,
+   поэтому у одной и той же книги цвет всегда одинаковый.
+
+   Вызов: <partial name="_BookCover" model="@(new BookCoverModel(...))" /> *@
+@model BookCoverModel
+
+<div class="book-cover @Model.SizeClass @(Model.ImageUrl == null ? $"cover-{Model.Id % 6}" : "")">
+    @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+    {
+        <img src="@Model.ImageUrl" alt="Обложка книги «@Model.Title»" loading="lazy" />
+    }
+    else
+    {
+        <div class="cover-art" role="img" aria-label="Обложка книги «@Model.Title»">
+            <div class="cover-title">@Model.Title</div>
+            <div class="cover-author">@Model.Author</div>
+        </div>
+    }
+</div>

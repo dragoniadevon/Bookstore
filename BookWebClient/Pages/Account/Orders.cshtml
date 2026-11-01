@@ -1,0 +1,61 @@
+@page
+@* Мои заказы (адрес "/Account/Orders"). *@
+@model BookWebClient.Pages.Account.OrdersModel
+@{
+    ViewData["Title"] = "Мої замовлення";
+}
+
+<h1 class="mb-4">Мої замовлення</h1>
+
+@if (Model.Orders.Count == 0)
+{
+    <div class="shop-panel empty-state">
+        <div class="empty-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 8 12 3 3 8v8l9 5 9-5z" /><path d="m3 8 9 5 9-5M12 13v8" /></svg>
+        </div>
+        <h2 class="h5">Замовлень поки немає</h2>
+        <p class="text-muted-shop">Оформлені замовлення з'являться тут.</p>
+        <a class="btn btn-primary" asp-page="/Index">Перейти до каталогу</a>
+    </div>
+}
+else
+{
+    @* accordion — раскрывающиеся блоки Bootstrap: по клику показывается состав заказа *@
+    <div class="accordion" id="orders">
+        @for (var i = 0; i < Model.Orders.Count; i++)
+        {
+            var order = Model.Orders[i];
+            var collapseId = $"order-{i}";
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button @(i == 0 ? "" : "collapsed")" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#@collapseId" aria-expanded="@(i == 0 ? "true" : "false")" aria-controls="@collapseId">
+                        <span class="d-flex flex-wrap gap-3 w-100 justify-content-between me-3">
+                            <span><strong>@order.Number</strong> <span class="text-muted-shop ms-2">@order.CreatedAt.ToString("dd.MM.yyyy HH:mm")</span></span>
+                            <span class="d-flex gap-3">
+                                <span class="badge text-bg-success align-self-center">Сплачено</span>
+                                <strong>@order.Total.ToUah()</strong>
+                            </span>
+                        </span>
+                    </button>
+                </h2>
+                <div id="@collapseId" class="accordion-collapse collapse @(i == 0 ? "show" : "")" data-bs-parent="#orders">
+                    <div class="accordion-body">
+                        <ul class="list-unstyled mb-3">
+                            @foreach (var item in order.Items)
+                            {
+                                <li class="summary-row">
+                                    <a asp-page="/Books/Details" asp-route-id="@item.BookId">@item.Title</a>
+                                    <span>@item.Quantity × @item.Price.ToUah()</span>
+                                </li>
+                            }
+                        </ul>
+                        <div class="small text-muted-shop">
+                            Доставка: @order.Address · Телефон: @order.Phone · Картка •••• @order.CardLast4
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}

@@ -1,4 +1,5 @@
-﻿using Bookstore.Api.Models.DTO;
+﻿using Bookstore.Api.Models;
+using Bookstore.Api.Models.DTO;
 using Bookstore.Api.Services.Interface;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,10 +16,10 @@ namespace Bookstore.Api.Controllers
         // Controller отвечает только за HTTP: принимает запрос,
         // вызывает Service и выбирает код ответа.
         // С базой данных он напрямую не работает.
-        private readonly IBaseService<BookDTO> _bookService;
+        private readonly IBaseService<BookDTO, BookPatchDTO> _bookService;
 
         // Service передаёт Dependency Injection.
-        public BookController(IBaseService<BookDTO> bookService)
+        public BookController(IBaseService<BookDTO, BookPatchDTO> bookService)
         {
             _bookService = bookService;
         }
@@ -53,10 +54,10 @@ namespace Bookstore.Api.Controllers
         {
             var book = await _bookService.CreateAsync(newBook);
 
-            // null = автор или жанр с такими ID не найдены -> 400
+            // null = автор, жанр или издательство с такими ID не найдены -> 400
             if (book == null)
             {
-                return BadRequest("Автор или жанр с указанным ID не найден.");
+                return BadRequest("Автора, жанр або видавництво з указаним ID не знайдено.");
             }
 
             // 201 Created + созданный объект + адрес для GET
@@ -71,7 +72,7 @@ namespace Bookstore.Api.Controllers
             // ID берём из URL, как в AuthorController
             book.Id = id;
 
-            // null = книга (или автор/жанр) не найдена -> 404
+            // null = книга (или автор/жанр/издательство) не найдена -> 404
             var updated = await _bookService.UpdateAsync(book);
             if (updated == null)
             {
@@ -82,9 +83,10 @@ namespace Bookstore.Api.Controllers
         }
 
         // PATCH /api/Book/{id}
-        // Частичное обновление: меняются только переданные поля.
+        // Частичное обновление: меняются только переданные поля
+        // (в BookPatchDTO все поля необязательные, null = не меняем).
         [HttpPatch("{id}")]
-        public async Task<IActionResult> PatchAsync(int id, [FromBody] BookDTO book)
+        public async Task<IActionResult> PatchAsync(int id, [FromBody] BookPatchDTO book)
         {
             // null = книга (или автор/жанр) не найдена -> 404
             var updated = await _bookService.PatchAsync(id, book);
@@ -97,17 +99,17 @@ namespace Bookstore.Api.Controllers
         }
 
         // DELETE /api/Book/{id}
-        // Удаление книги: 204 No Content или 404, если не найдена.
+        // Удаление книги: 204 No Content, 409 (книга есть в заказах) или 404.
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            bool isDeleted = await _bookService.DeleteAsync(id);
-            if (!isDeleted)
+            var result = await _bookService.DeleteAsync(id);
+            return result switch
             {
-                return NotFound();
-            }
-
-            return NoContent();
+                DeleteResult.Deleted => NoContent(),
+                DeleteResult.InUse => Conflict("Неможливо видалити книгу: вона є в оформлених замовленнях."),
+                _ => NotFound()
+            };
         }
     }
 }

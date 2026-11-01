@@ -51,8 +51,8 @@ namespace Bookstore.Api.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Name = "Author"
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Тарас Шевченко"
                         });
                 });
 
@@ -65,9 +65,6 @@ namespace Bookstore.Api.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("AuthorId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("CartId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
@@ -102,8 +99,6 @@ namespace Bookstore.Api.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("AuthorId");
-
-                    b.HasIndex("CartId");
 
                     b.HasIndex("GenreId");
 
@@ -195,8 +190,8 @@ namespace Bookstore.Api.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Name = "Genre"
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Класика"
                         });
                 });
 
@@ -222,6 +217,7 @@ namespace Bookstore.Api.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("TotalAmount")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("UserId")
@@ -258,6 +254,7 @@ namespace Bookstore.Api.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("UnitPrice")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
@@ -298,8 +295,9 @@ namespace Bookstore.Api.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Name = "Publisher"
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Класична та сучасна проза",
+                            Name = "Книжковий дім"
                         });
                 });
 
@@ -342,10 +340,6 @@ namespace Bookstore.Api.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Bookstore.Api.Models.Entity.Cart", null)
-                        .WithMany("Books")
-                        .HasForeignKey("CartId");
-
                     b.HasOne("Bookstore.Api.Models.Entity.Genre", "Genre")
                         .WithMany("Books")
                         .HasForeignKey("GenreId")
@@ -385,7 +379,7 @@ namespace Bookstore.Api.Migrations
                         .IsRequired();
 
                     b.HasOne("Bookstore.Api.Models.Entity.Cart", "Cart")
-                        .WithMany()
+                        .WithMany("Items")
                         .HasForeignKey("CartId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -411,7 +405,7 @@ namespace Bookstore.Api.Migrations
                     b.HasOne("Bookstore.Api.Models.Entity.Book", "Book")
                         .WithMany()
                         .HasForeignKey("BookId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Bookstore.Api.Models.Entity.Order", "Order")
@@ -432,7 +426,7 @@ namespace Bookstore.Api.Migrations
 
             modelBuilder.Entity("Bookstore.Api.Models.Entity.Cart", b =>
                 {
-                    b.Navigation("Books");
+                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("Bookstore.Api.Models.Entity.Genre", b =>

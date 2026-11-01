@@ -10,7 +10,9 @@ using Microsoft.EntityFrameworkCore;
 
 public partial class Program
 {
-    public static void Main(string[] args)
+    // async Task — Main стал асинхронным, чтобы можно было дождаться (await)
+    // заполнения базы демо-данными перед запуском приложения.
+    public static async Task Main(string[] args)
     {
         // Создаём builder приложения.
         //
@@ -75,24 +77,25 @@ public partial class Program
         // Scoped означает, что в рамках одного HTTP-запроса
         // будет использоваться один экземпляр этого сервиса.
         builder.Services.AddScoped<IBaseRepository<Author>, AuthorRepository>();
-        builder.Services.AddEndpointsApiExplorer();
 
-        builder.Services.AddScoped<IBaseService<AuthorDTO>, AuthorService>();
+        // Сервис регистрируется под интерфейсом с двумя типами:
+        // обычный DTO и DTO для PATCH (в нём все поля необязательные).
+        builder.Services.AddScoped<IBaseService<AuthorDTO, AuthorPatchDTO>, AuthorService>();
 
         // Book: репозиторий и сервис.
         builder.Services.AddScoped<IBaseRepository<Book>, BookRepository>();
-        builder.Services.AddScoped<IBaseService<BookDTO>, BookService>();
+        builder.Services.AddScoped<IBaseService<BookDTO, BookPatchDTO>, BookService>();
 
         // Genre: репозиторий и сервис.
         // GenreRepository нужен и самому GenreService, и BookService
         // (тот проверяет, что жанр существует).
         builder.Services.AddScoped<IBaseRepository<Genre>, GenreRepository>();
-        builder.Services.AddScoped<IBaseService<GenreDTO>, GenreService>();
+        builder.Services.AddScoped<IBaseService<GenreDTO, GenrePatchDTO>, GenreService>();
 
 
         // Publisher: репозиторий и сервис.
         builder.Services.AddScoped<IBaseRepository<Publisher>, PublisherRepository>();
-        builder.Services.AddScoped<IBaseService<PublisherDTO>, PublisherService>();
+        builder.Services.AddScoped<IBaseService<PublisherDTO, PublisherPatchDTO>, PublisherService>();
 
         // Добавляем поддержку Controllers.
         //
@@ -116,6 +119,20 @@ public partial class Program
         // Создаём готовое приложение на основе всех настроек,
         // которые мы указали выше.
         var app = builder.Build();
+
+
+        // В режиме разработки заполняем пустую базу демонстрационным каталогом
+        // (украинские и зарубежные книги). Если книги уже есть — ничего не происходит.
+        //
+        // CreateScope — AppDbContext зарегистрирован как Scoped ("на один запрос"),
+        // а при запуске запроса ещё нет, поэтому создаём область вручную.
+        // using — область (и DbContext в ней) освободится после заполнения.
+        if (app.Environment.IsDevelopment())
+        {
+            using var scope = app.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            await DbSeeder.SeedDemoCatalogAsync(db);
+        }
 
 
         // ============================================================

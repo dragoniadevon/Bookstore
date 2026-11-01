@@ -1,4 +1,5 @@
 ﻿using Bookstore.Api.Data;
+using Bookstore.Api.Models;
 using Bookstore.Api.Models.Entity;
 using Bookstore.Api.Repositories.Interface;
 using Microsoft.EntityFrameworkCore;
@@ -45,18 +46,24 @@ namespace Bookstore.Api.Repositories
             return entity;
         }
 
-        // Удалить жанр по ID. false, если жанра нет.
-        public async Task<bool> DeleteAsync(int id)
+        // Удалить жанр по ID.
+        // NotFound — жанра нет, InUse — у жанра есть книги (удалять нельзя).
+        public async Task<DeleteResult> DeleteAsync(int id)
         {
             var genre = await _context.Genres.FindAsync(id);
             if (genre == null)
             {
-                return false;
+                return DeleteResult.NotFound;
+            }
+
+            if (await _context.Books.AnyAsync(b => b.GenreId == id))
+            {
+                return DeleteResult.InUse;
             }
 
             _context.Genres.Remove(genre);
             await _context.SaveChangesAsync();
-            return true;
+            return DeleteResult.Deleted;
         }
     }
 }

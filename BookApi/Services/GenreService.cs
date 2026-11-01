@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Bookstore.Api.Models;
 using Bookstore.Api.Models.DTO;
 using Bookstore.Api.Models.Entity;
 using Bookstore.Api.Repositories.Interface;
@@ -7,8 +8,8 @@ using Bookstore.Api.Services.Interface;
 namespace Bookstore.Api.Services
 {
     // Service содержит логику работы с жанрами.
-    // О HTTP-кодах он не знает: "не найдено" сообщает через null / false.
-    internal class GenreService : IBaseService<GenreDTO>
+    // О HTTP-кодах он не знает: "не найдено" сообщает через null / DeleteResult.
+    internal class GenreService : IBaseService<GenreDTO, GenrePatchDTO>
     {
         // Repository для доступа к БД.
         private readonly IBaseRepository<Genre> _repository;
@@ -70,7 +71,8 @@ namespace Bookstore.Api.Services
         }
 
         // Частичное обновление (PATCH): меняем только переданные поля.
-        public async Task<GenreDTO?> PatchAsync(int id, GenreDTO dto)
+        // null в поле GenrePatchDTO = "не передано, не меняем".
+        public async Task<GenreDTO?> PatchAsync(int id, GenrePatchDTO dto)
         {
             var genre = await _repository.GetByIdAsync(id);
             if (genre == null)
@@ -78,7 +80,7 @@ namespace Bookstore.Api.Services
                 return null;
             }
 
-            if (!string.IsNullOrEmpty(dto.Name))
+            if (dto.Name != null)
             {
                 genre.Name = dto.Name;
             }
@@ -87,8 +89,8 @@ namespace Bookstore.Api.Services
             return _mapper.Map<GenreDTO>(updated);
         }
 
-        // Удалить жанр. false = не найден.
-        public async Task<bool> DeleteAsync(int id)
+        // Удалить жанр: Deleted, NotFound или InUse (у жанра есть книги).
+        public async Task<DeleteResult> DeleteAsync(int id)
         {
             return await _repository.DeleteAsync(id);
         }

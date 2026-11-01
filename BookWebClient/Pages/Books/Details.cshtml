@@ -1,0 +1,96 @@
+@page "{id:int}"
+@* "{id:int}" — шаблон адреса: страница открывается по /Books/Details/5,
+   а 5 попадает в параметр id метода OnGetAsync. ":int" — только числа. *@
+@model DetailsModel
+@{
+    ViewData["Title"] = Model.Book.Title;
+    var book = Model.Book;
+}
+
+<nav aria-label="Навігація" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-page="/Index">Каталог</a></li>
+        <li class="breadcrumb-item"><a asp-page="/Index" asp-route-genre="@book.GenreId">@book.GenreName</a></li>
+        <li class="breadcrumb-item active" aria-current="page">@book.Title</li>
+    </ol>
+</nav>
+
+<div class="shop-panel p-4 p-lg-5">
+    <div class="row g-5">
+        <div class="col-md-5 col-lg-4">
+            <partial name="_BookCover" model="@(new BookCoverModel(book.Id, book.Title, book.AuthorName, book.ImageUrl, "cover-lg"))" />
+        </div>
+
+        <div class="col-md-7 col-lg-8">
+            <span class="genre-chip mb-2">@book.GenreName</span>
+            <h1 class="mt-2 mb-1">@book.Title</h1>
+            <p class="fs-5 mb-4">
+                <a asp-page="/Index" asp-route-author="@book.AuthorId" class="text-decoration-none">@book.AuthorName</a>
+            </p>
+
+            <p class="mb-4" style="max-width: 60ch">@(book.Description ?? "Опис поки що не додано.")</p>
+
+            @* dl — список "термин — значение", удобен для характеристик *@
+            <dl class="row small mb-4" style="max-width: 420px">
+                <dt class="col-5 text-muted-shop fw-normal">Видавництво</dt>
+                <dd class="col-7">@book.PublisherName</dd>
+                <dt class="col-5 text-muted-shop fw-normal">Жанр</dt>
+                <dd class="col-7">@book.GenreName</dd>
+                <dt class="col-5 text-muted-shop fw-normal">Наявність</dt>
+                <dd class="col-7">
+                    @if (book.InStock)
+                    {
+                        <span class="text-success">В наявності: @book.StockQuantity шт.</span>
+                    }
+                    else
+                    {
+                        <span class="text-danger">Немає в наявності</span>
+                    }
+                </dd>
+            </dl>
+
+            <div class="d-flex flex-wrap align-items-center gap-3">
+                <span class="fs-2 fw-bold">@book.Price.ToUah()</span>
+
+                @if (book.InStock)
+                {
+                    <form method="post" asp-page-handler="AddToCart" asp-route-id="@book.Id" class="d-flex gap-2">
+                        <input type="number" name="quantity" value="1" min="1" max="@book.StockQuantity"
+                               class="form-control" style="width: 5.5rem" aria-label="Кількість" />
+                        <button type="submit" class="btn btn-primary btn-lg px-4">До кошика</button>
+                    </form>
+                }
+            </div>
+
+            @if (Model.InCart > 0)
+            {
+                <p class="mt-3 mb-0 small">
+                    У кошику: @Model.InCart шт. · <a asp-page="/Cart/Index">Перейти до кошика</a>
+                </p>
+            }
+        </div>
+    </div>
+</div>
+
+@if (Model.SameAuthor.Count > 0)
+{
+    <section class="mt-5">
+        <h2 class="h4 mb-3">Ще в автора</h2>
+        <div class="row row-cols-2 row-cols-md-4 g-3">
+            @foreach (var other in Model.SameAuthor)
+            {
+                <div class="col">
+                    <a class="book-card text-decoration-none" asp-page="/Books/Details" asp-route-id="@other.Id">
+                        <div class="cover-wrap">
+                            <partial name="_BookCover" model="@(new BookCoverModel(other.Id, other.Title, other.AuthorName, other.ImageUrl))" />
+                        </div>
+                        <div class="card-body">
+                            <span class="book-title">@other.Title</span>
+                            <span class="book-price mt-2">@other.Price.ToUah()</span>
+                        </div>
+                    </a>
+                </div>
+            }
+        </div>
+    </section>
+}

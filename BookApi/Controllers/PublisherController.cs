@@ -1,4 +1,5 @@
-﻿using Bookstore.Api.Models.DTO;
+﻿using Bookstore.Api.Models;
+using Bookstore.Api.Models.DTO;
 using Bookstore.Api.Services.Interface;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,10 +14,10 @@ namespace Bookstore.Api.Controllers
     public class PublisherController : ControllerBase
     {
         // Controller не работает с базой напрямую, только через Service.
-        private readonly IBaseService<PublisherDTO> _publisherService;
+        private readonly IBaseService<PublisherDTO, PublisherPatchDTO> _publisherService;
 
         // Dependency Injection передаёт Service в Controller.
-        public PublisherController(IBaseService<PublisherDTO> publisherService)
+        public PublisherController(IBaseService<PublisherDTO, PublisherPatchDTO> publisherService)
         {
             _publisherService = publisherService;
         }
@@ -57,23 +58,23 @@ namespace Bookstore.Api.Controllers
                 return BadRequest();
             }
 
-            // 201 Created.
-            return Created();
+            // 201 Created + созданный объект + адрес для GET.
+            return CreatedAtAction(nameof(GetById), new { id = publisher.Id }, publisher);
         }
 
         // DELETE /api/Publisher/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            bool isPublisherDeleted = await _publisherService.DeleteAsync(id);
+            var result = await _publisherService.DeleteAsync(id);
 
-            if (!isPublisherDeleted)
+            // 204 — удалено, 409 — у издательства есть книги, 404 — не найдено.
+            return result switch
             {
-                return BadRequest();
-            }
-
-            // 204 No Content: операция выполнена, данные возвращать не нужно.
-            return NoContent();
+                DeleteResult.Deleted => NoContent(),
+                DeleteResult.InUse => Conflict("Неможливо видалити видавництво: у нього є книги."),
+                _ => NotFound()
+            };
         }
 
         // PUT /api/Publisher/{id}
@@ -98,11 +99,12 @@ namespace Bookstore.Api.Controllers
         }
 
         // PATCH /api/Publisher/{id}
-        // Частичное обновление: меняем только переданные поля.
+        // Частичное обновление: меняем только переданные поля
+        // (в PublisherPatchDTO все поля необязательные).
         [HttpPatch("{id}")]
         public async Task<IActionResult> PatchAsync(
             int id,
-            [FromBody] PublisherDTO publisher)
+            [FromBody] PublisherPatchDTO publisher)
         {
             var updatedPublisher = await _publisherService.PatchAsync(id, publisher);
 

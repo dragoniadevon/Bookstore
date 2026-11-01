@@ -1,0 +1,16 @@
+@page
+@* Сюда попадает вошедший пользователь, у которого нет прав на страницу
+   (например, покупатель открыл /Admin). Адрес задан в AccessDeniedPath в Program.cs. *@
+@model BookWebClient.Pages.Account.AccessDeniedModel
+@{
+    ViewData["Title"] = "Немає доступу";
+}
+
+<div class="shop-panel empty-state mx-auto" style="max-width: 560px">
+    <div class="empty-icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+    </div>
+    <h1 class="h4">Немає доступу</h1>
+    <p class="text-muted-shop">Ця сторінка доступна лише адміністраторові магазину.</p>
+    <a class="btn btn-primary" asp-page="/Index">На головну</a>
+</div>
