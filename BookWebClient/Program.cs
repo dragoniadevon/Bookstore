@@ -159,10 +159,33 @@ builder.Services.AddScoped<IPaymentService, PaymentService>();
 // Витрина магазина: книги с именами авторов, жанров и издательств.
 builder.Services.AddScoped<ICatalogService, CatalogService>();
 
-// Корзина в сессии.
-builder.Services.AddScoped<ICartService, SessionCartService>();
+// ------------------------------------------------------------
+//   Корзина, вход и заказы: API или мок
+// ------------------------------------------------------------
+//
+// Для каждой функции две реализации и "стрелочник" (Switchable...), который
+// выбирает нужную по режиму из переключателя "Мок / API":
+// - режим API  -> ApiCartService / ApiAuthService / ApiOrderService (HTTP к Bookstore.Api);
+// - режим Mock -> SessionCartService / MockAuthService / MockOrderService (данные в памяти).
+// Гость в режиме API пользуется корзиной в сессии; после входа она переносится в API (CartMerger).
 
-// Пользователи и заказы — в памяти, пока в API нет этих функций.
+// Корзина
+builder.Services.AddScoped<SessionCartService>();
+builder.Services.AddScoped<ApiCartService>();
+builder.Services.AddScoped<ICartService, SwitchableCartService>();
+builder.Services.AddScoped<CartMerger>();
+
+// Вход и регистрация
+builder.Services.AddScoped<ApiAuthService>();
+builder.Services.AddScoped<MockAuthService>();
+builder.Services.AddScoped<IAuthService, SwitchableAuthService>();
+
+// Заказы
+builder.Services.AddScoped<ApiOrderService>();
+builder.Services.AddScoped<MockOrderService>();
+builder.Services.AddScoped<IOrderService, SwitchableOrderService>();
+
+// Хранилища мок-режима: пользователи и заказы в памяти (пропадают при перезапуске).
 // Singleton — один объект на всё приложение, чтобы данные не терялись между запросами.
 builder.Services.AddSingleton<IUserStore, InMemoryUserStore>();
 builder.Services.AddSingleton<IOrderStore, InMemoryOrderStore>();

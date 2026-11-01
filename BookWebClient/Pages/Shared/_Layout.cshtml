@@ -11,7 +11,7 @@
 @inject ICartService Cart
 @inject IDataSourceSwitch DataSource
 @{
-    var cartCount = Cart.Count;
+    var cartCount = await Cart.CountAsync();
     var isAdmin = User.IsInRole(ShopRoles.Admin);
 
     // Текущий адрес вместе с параметрами — чтобы после переключения

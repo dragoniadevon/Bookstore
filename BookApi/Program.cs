@@ -4,6 +4,10 @@ using Bookstore.Api.Models.DTO;
 using Bookstore.Api.Models.Entity;
 using Bookstore.Api.Repositories;
 using Bookstore.Api.Repositories.Interface;
+using Bookstore.Api.Security;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
 using Bookstore.Api.Services;
 using Bookstore.Api.Services.Interface;
 using Microsoft.EntityFrameworkCore;
@@ -97,6 +101,54 @@ public partial class Program
         builder.Services.AddScoped<IBaseRepository<Publisher>, PublisherRepository>();
         builder.Services.AddScoped<IBaseService<PublisherDTO, PublisherPatchDTO>, PublisherService>();
 
+        // Пользователи, корзина и заказы.
+        builder.Services.AddScoped<IAuthService, AuthService>();
+        builder.Services.AddScoped<ICartService, CartService>();
+        builder.Services.AddScoped<IOrderService, OrderService>();
+
+
+        // ------------------------------------------------------------
+        //   Аутентификация через JWT
+        // ------------------------------------------------------------
+        //
+        // JwtSettings (ключ, срок действия) читаем из настройки "Jwt".
+        // Регистрируем через фабрику (sp => ...), а не читаем сразу: так настройки
+        // берутся в момент первого использования, и тесты успевают подставить свои.
+        builder.Services.AddSingleton(sp => JwtSettings.FromConfiguration(
+            sp.GetRequiredService<IConfiguration>(),
+            sp.GetRequiredService<IHostEnvironment>()));
+        builder.Services.AddSingleton<ITokenService, TokenService>();
+
+        // Схема "Bearer": токен приходит в заголовке Authorization: Bearer <токен>.
+        builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer();
+
+        // Правила проверки токена. Configure<JwtSettings> — получить JwtSettings из DI.
+        builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+            .Configure<JwtSettings>((options, jwt) =>
+            {
+                // Не переименовывать claims в длинные URL (sub -> ClaimTypes.NameIdentifier):
+                // используем короткие имена из AppClaims.
+                options.MapInboundClaims = false;
+
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidIssuer = jwt.Issuer,
+                    ValidateAudience = true,
+                    ValidAudience = jwt.Audience,
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = jwt.SigningKey,   // подпись проверяется нашим ключом
+                    ValidateLifetime = true,             // просроченный токен не принимается
+                    ClockSkew = TimeSpan.FromMinutes(1), // допуск на разницу часов
+
+                    // Из какого claim брать имя (User.Identity.Name) и роль (User.IsInRole)
+                    NameClaimType = AppClaims.Name,
+                    RoleClaimType = AppClaims.Role
+                };
+            });
+
+        builder.Services.AddAuthorization();
+
         // Добавляем поддержку Controllers.
         //
         // Благодаря этому ASP.NET Core сможет находить наши
@@ -110,7 +162,23 @@ public partial class Program
         // доступных HTTP endpoints.
         //builder.Services.AddOpenApi();
         builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen();
+
+        // Swagger с кнопкой "Authorize": в неё вставляется токен из /api/Auth/login,
+        // и Swagger добавляет его ко всем запросам — так можно проверять методы с [Authorize].
+        builder.Services.AddSwaggerGen(options =>
+        {
+            options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+            {
+                Type = SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "JWT",
+                Description = "Вставьте токен из ответа /api/Auth/login (без слова Bearer)."
+            });
+            options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+            {
+                [new OpenApiSecuritySchemeReference("Bearer", document)] = []
+            });
+        });
 
         // ============================================================
         //                  BUILD APPLICATION
@@ -132,6 +200,15 @@ public partial class Program
             using var scope = app.Services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             await DbSeeder.SeedDemoCatalogAsync(db);
+            await DbSeeder.SeedDemoUsersAsync(db);
+        }
+
+        // Предупреждаем, если ключ JWT не задан и создан временный
+        if (app.Services.GetRequiredService<JwtSettings>().IsTemporaryKey)
+        {
+            app.Logger.LogWarning(
+                "Ключ Jwt:Key не задан — используется временный ключ, токены перестанут действовать после перезапуска. " +
+                "Задайте ключ: dotnet user-secrets set \"Jwt:Key\" \"<строка не короче 32 символов>\" --project BookApi");
         }
 
 
@@ -152,22 +229,29 @@ public partial class Program
         }
 
 
-        // Перенаправляем HTTP-запросы на HTTPS.
+        // Перенаправляем HTTP-запросы на HTTPS (только на рабочем сервере).
         //
         // Например:
         // http://localhost:5000
         //          ↓
-        // https://localhost:5001
-        app.UseHttpsRedirection();
+        // https://localhost:7000
+        //
+        // При разработке клиент обращается к http://localhost:5000. При перенаправлении
+        // HttpClient из соображений безопасности НЕ переносит заголовок Authorization
+        // на новый адрес — токен потерялся бы, и все запросы с [Authorize] получали бы 401.
+        if (!app.Environment.IsDevelopment())
+        {
+            app.UseHttpsRedirection();
+        }
 
 
-        // Включаем middleware авторизации.
-        //
-        // Здесь ASP.NET Core будет проверять,
-        // имеет ли пользователь необходимые права доступа.
-        //
-        // В будущем здесь может использоваться вместе с
-        // authentication / JWT.
+        // Аутентификация: читает токен из заголовка Authorization, проверяет подпись
+        // и срок и заполняет User (кто делает запрос).
+        // Должна стоять ДО UseAuthorization: сначала узнаём, кто это, потом проверяем права.
+        app.UseAuthentication();
+
+        // Авторизация: проверяет атрибуты [Authorize] и [Authorize(Roles = ...)].
+        // Нет токена — 401 Unauthorized, нет нужной роли — 403 Forbidden.
         app.UseAuthorization();
 
 

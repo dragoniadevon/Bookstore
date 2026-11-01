@@ -29,10 +29,16 @@ namespace Bookstore.WebClient.Infrastructure
         // заново при каждом запросе дорого и бессмысленно.
         private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
 
-        // Фабрику передаёт Dependency Injection (она зарегистрирована через AddHttpClient).
-        public ApiGateway(IHttpClientFactory factory)
+        // Доступ к текущему запросу браузера — чтобы взять JWT-токен вошедшего пользователя.
+        // null — если шлюз создан вне веб-запроса (например, в тестах).
+        private readonly IHttpContextAccessor? _httpContextAccessor;
+
+        // Зависимости передаёт Dependency Injection (фабрика зарегистрирована через AddHttpClient).
+        // "= null" — параметр необязательный: в тестах шлюз можно создать без HttpContext.
+        public ApiGateway(IHttpClientFactory factory, IHttpContextAccessor? httpContextAccessor = null)
         {
             _httpClientFactory = factory;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         // Отправляет запрос в API и возвращает результат.
@@ -70,11 +76,16 @@ namespace Bookstore.WebClient.Infrastructure
                     message.Content = JsonContent.Create(request.Data, options: JsonOptions);
                 }
 
-                // Если передан токен, добавляем заголовок "Authorization: Bearer <токен>".
-                // По нему API поймёт, какой пользователь делает запрос.
-                if (!string.IsNullOrEmpty(request.Token))
+                // JWT-токен: либо передан явно в запросе, либо берём токен вошедшего
+                // пользователя из его cookie (claim "access_token", см. SignInHelper).
+                // Добавляем заголовок "Authorization: Bearer <токен>" — по нему API поймёт,
+                // какой пользователь делает запрос. Заголовок ставим на конкретное сообщение,
+                // а не на весь HttpClient, чтобы токен одного пользователя не попал к другому.
+                var token = request.Token
+                    ?? _httpContextAccessor?.HttpContext?.User.FindFirst(AccessTokenClaim)?.Value;
+                if (!string.IsNullOrEmpty(token))
                 {
-                    client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", request.Token);
+                    message.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
                 }
 
                 // Выбираем HTTP-метод по ApiType:
@@ -105,8 +116,14 @@ namespace Bookstore.WebClient.Infrastructure
                 // Иначе (400, 404, 500...) читаем текст ошибки от API и возвращаем неуспех.
                 if (!responseMessage.IsSuccessStatusCode)
                 {
+                    // 401 — токена нет или он истёк: даём понятный текст вместо пустого ответа
+                    if (responseMessage.StatusCode == HttpStatusCode.Unauthorized && !string.IsNullOrEmpty(token))
+                    {
+                        return Fail<T>(responseMessage.StatusCode, "Сеанс завершився. Увійдіть знову.");
+                    }
+
                     var errorBody = await responseMessage.Content.ReadAsStringAsync(ct);
-                    return Fail<T>(responseMessage.StatusCode, errorBody);
+                    return Fail<T>(responseMessage.StatusCode, ErrorText(errorBody));
                 }
 
                 // 204 или пустое тело (например, 201 Created() без данных) — успех без Result.
@@ -127,7 +144,7 @@ namespace Bookstore.WebClient.Infrastructure
                 return Fail<T>(0, ex.Message);
             }
             // Запрос слишком долго ждал ответа (или был отменён).
-            catch (TaskCanceledException ex)
+            catch (TaskCanceledException)
             {
                 return Fail<T>(HttpStatusCode.RequestTimeout, "Перевищено час очікування");
             }
@@ -139,6 +156,28 @@ namespace Bookstore.WebClient.Infrastructure
             }
         }
 
+
+        // Текст ошибки из тела ответа.
+        // API возвращает ошибки вроде Conflict("Неможливо видалити...") как JSON-строку —
+        // в кавычках и с экранированными символами: "Не...". Превращаем её
+        // в обычный текст. Если тело — не JSON-строка (например, объект с ошибками
+        // валидации), оставляем как есть.
+        private static string ErrorText(string body)
+        {
+            if (body.Length >= 2 && body[0] == '"')
+            {
+                try
+                {
+                    return JsonSerializer.Deserialize<string>(body) ?? body;
+                }
+                catch (JsonException)
+                {
+                    return body;
+                }
+            }
+
+            return body;
+        }
 
         // Вспомогательный метод: создаёт ответ с ошибкой.
         // "=> new() { ... }" — короткая запись метода, который сразу возвращает объект.

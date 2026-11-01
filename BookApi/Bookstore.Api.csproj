@@ -13,6 +13,11 @@
     <None Remove="Auth\**" />
   </ItemGroup>
 
+  <!-- Разрешаем тестовому проекту видеть internal-классы (AppDbContext, сервисы) -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Bookstore.Api.Tests" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="AutoMapper" Version="16.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.12" />

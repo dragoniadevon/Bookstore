@@ -1,10 +1,8 @@
 using Bookstore.WebClient.Models;
-using Bookstore.WebClient.Models.Payment;
 using Bookstore.WebClient.Service.Interface;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.ComponentModel.DataAnnotations;
-using System.Security.Claims;
 
 namespace BookWebClient.Pages.Checkout
 {
@@ -13,13 +11,11 @@ namespace BookWebClient.Pages.Checkout
     public class IndexModel : PageModel
     {
         private readonly ICartService _cart;
-        private readonly IPaymentService _payment;
-        private readonly IOrderStore _orders;
+        private readonly IOrderService _orders;
 
-        public IndexModel(ICartService cart, IPaymentService payment, IOrderStore orders)
+        public IndexModel(ICartService cart, IOrderService orders)
         {
             _cart = cart;
-            _payment = payment;
             _orders = orders;
         }
 
@@ -30,9 +26,9 @@ namespace BookWebClient.Pages.Checkout
         public List<CartItem> Items { get; private set; } = [];
         public decimal Total { get; private set; }
 
-        public IActionResult OnGet()
+        public async Task<IActionResult> OnGetAsync(CancellationToken ct)
         {
-            if (!LoadCart()) return RedirectToPage("/Cart/Index");
+            if (!await LoadCartAsync(ct)) return RedirectToPage("/Cart/Index");
 
             // Подставляем имя из профиля, чтобы не вводить его заново
             Input.FullName = User.Identity?.Name ?? string.Empty;
@@ -42,7 +38,7 @@ namespace BookWebClient.Pages.Checkout
 
         public async Task<IActionResult> OnPostAsync(CancellationToken ct)
         {
-            if (!LoadCart()) return RedirectToPage("/Cart/Index");
+            if (!await LoadCartAsync(ct)) return RedirectToPage("/Cart/Index");
 
             // ModelState.IsValid — прошли ли все проверки [Required], [RegularExpression] и т.д.
             // Если нет — показываем форму снова, ошибки выведутся под полями.
@@ -50,12 +46,14 @@ namespace BookWebClient.Pages.Checkout
 
             // "08/28" -> месяц 8, год 28
             var expiry = Input.Expiry.Split('/');
-            var orderNumber = $"BS-{DateTime.Now:yyyyMMdd}-{Random.Shared.Next(1000, 9999)}";
 
-            var result = await _payment.PayAsync(new PaymentRequest
+            // Оплата и оформление: в режиме API склад уменьшается в базе,
+            // в мок-режиме — в памяти (см. ApiOrderService / MockOrderService).
+            var result = await _orders.PlaceOrderAsync(new CheckoutData
             {
-                OrderId = Math.Abs(orderNumber.GetHashCode()),
-                Amount = Total,
+                FullName = Input.FullName,
+                Phone = Input.Phone,
+                Address = Input.Address,
                 CardNumber = Input.CardNumber,
                 CardHolder = Input.CardHolder,
                 ExpiryMonth = int.Parse(expiry[0]),
@@ -63,34 +61,19 @@ namespace BookWebClient.Pages.Checkout
                 Cvv = Input.Cvv
             }, ct);
 
-            if (!result.IsSuccess)
+            if (!result.Success)
             {
                 // Ошибка без привязки к полю ("") выводится в общем блоке ошибок формы
-                ModelState.AddModelError(string.Empty, result.Message);
+                ModelState.AddModelError(string.Empty, result.Error!);
                 return Page();
             }
 
-            var email = User.FindFirstValue(ClaimTypes.Email) ?? string.Empty;
-            _orders.Add(new Order
-            {
-                Number = orderNumber,
-                CustomerEmail = email,
-                CustomerName = Input.FullName,
-                Phone = Input.Phone,
-                Address = Input.Address,
-                Items = Items,
-                Total = Total,
-                CardLast4 = result.CardLast4,
-                TransactionId = result.TransactionId
-            });
-
-            _cart.Clear();
-            return RedirectToPage("/Checkout/Success", new { number = orderNumber });
+            return RedirectToPage("/Checkout/Success", new { number = result.Order!.Number });
         }
 
-        private bool LoadCart()
+        private async Task<bool> LoadCartAsync(CancellationToken ct)
         {
-            Items = _cart.GetItems();
+            Items = await _cart.GetItemsAsync(ct);
             Total = Items.Sum(i => i.Total);
             return Items.Count > 0;
         }

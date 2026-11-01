@@ -11,4 +11,9 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
   </ItemGroup>
 
+  <!-- Разрешаем тестовому проекту видеть internal-члены (например, PaymentService без паузы) -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Bookstore.WebClient.Tests" />
+  </ItemGroup>
+
 </Project>

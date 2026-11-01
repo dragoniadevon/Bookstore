@@ -1,6 +1,7 @@
 ﻿using Bookstore.Api.Models;
 using Bookstore.Api.Models.DTO;
 using Bookstore.Api.Services.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Bookstore.Api.Controllers
@@ -49,6 +50,7 @@ namespace Bookstore.Api.Controllers
 
         // POST /api/Book
         // Создание книги из JSON в теле запроса.
+        [Authorize(Roles = UserRoles.Admin)]   // изменять каталог может только администратор
         [HttpPost]
         public async Task<IActionResult> CreateAsync([FromBody] BookDTO newBook)
         {
@@ -66,6 +68,7 @@ namespace Bookstore.Api.Controllers
 
         // PUT /api/Book/{id}
         // Полное обновление книги.
+        [Authorize(Roles = UserRoles.Admin)]   // изменять каталог может только администратор
         [HttpPut("{id}")]
         public async Task<IActionResult> PutAsync(int id, [FromBody] BookDTO book)
         {
@@ -85,6 +88,7 @@ namespace Bookstore.Api.Controllers
         // PATCH /api/Book/{id}
         // Частичное обновление: меняются только переданные поля
         // (в BookPatchDTO все поля необязательные, null = не меняем).
+        [Authorize(Roles = UserRoles.Admin)]   // изменять каталог может только администратор
         [HttpPatch("{id}")]
         public async Task<IActionResult> PatchAsync(int id, [FromBody] BookPatchDTO book)
         {
@@ -100,6 +104,7 @@ namespace Bookstore.Api.Controllers
 
         // DELETE /api/Book/{id}
         // Удаление книги: 204 No Content, 409 (книга есть в заказах) или 404.
+        [Authorize(Roles = UserRoles.Admin)]   // изменять каталог может только администратор
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {

@@ -21,10 +21,21 @@ namespace Bookstore.WebClient.Service
         // ILogger<PaymentService> — в логе будет видно, что сообщение пришло из этого класса.
         private readonly ILogger<PaymentService> _logger;
 
+        // Имитировать ли паузу "ответа банка" (1–3 секунды)
+        private readonly bool _simulateBankDelay;
+
         // Логгер передаёт Dependency Injection (ASP.NET Core регистрирует его сам).
-        public PaymentService(ILogger<PaymentService> logger)
+        public PaymentService(ILogger<PaymentService> logger) : this(logger, simulateBankDelay: true)
+        {
+        }
+
+        // Конструктор для тестов: без паузы, чтобы тесты выполнялись мгновенно.
+        // internal — виден только внутри проекта и тестам (InternalsVisibleTo в .csproj).
+        // Dependency Injection использует только public-конструкторы, поэтому сайт его не вызовет.
+        internal PaymentService(ILogger<PaymentService> logger, bool simulateBankDelay)
         {
             _logger = logger;
+            _simulateBankDelay = simulateBankDelay;
         }
 
         public async Task<PaymentResult> PayAsync(PaymentRequest request, CancellationToken ct = default)
@@ -46,7 +57,10 @@ namespace Bookstore.WebClient.Service
             try
             {
                 // Имитация ожидания ответа от банка.
-                await Task.Delay(Random.Shared.Next(1000, 3000), ct);
+                if (_simulateBankDelay)
+                {
+                    await Task.Delay(Random.Shared.Next(1000, 3000), ct);
+                }
             }
             // Если пользователь закрыл страницу во время ожидания, Task.Delay
             // бросает TaskCanceledException. Ловим его и сообщаем об отмене.

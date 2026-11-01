@@ -93,8 +93,12 @@ namespace BookWebClient.Pages
             }
             else
             {
-                _cart.Add(book);
-                TempData["Success"] = $"«{book.Title}» додано до кошика.";
+                // AddAsync возвращает текст ошибки (например, "у наявності лише 2 шт.") или null
+                var error = await _cart.AddAsync(book, 1, ct);
+                if (error == null)
+                    TempData["Success"] = $"«{book.Title}» додано до кошика.";
+                else
+                    TempData["Error"] = error;
             }
 
             return LocalRedirect(Url.IsLocalUrl(returnUrl) ? returnUrl! : "/");

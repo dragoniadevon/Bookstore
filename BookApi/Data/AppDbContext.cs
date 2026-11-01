@@ -167,6 +167,44 @@ namespace Bookstore.Api.Data
                 .OnDelete(DeleteBehavior.Restrict);
 
 
+            // ---------- Пользователи, корзины, заказы ----------
+
+            // Email пользователя уникален: два аккаунта с одним email быть не может.
+            // HasIndex(...).IsUnique() создаёт в базе уникальный индекс —
+            // база сама не даст вставить дубликат, даже если проверку в коде забыли.
+            modelBuilder.Entity<User>()
+                .HasIndex(u => u.Email)
+                .IsUnique();
+
+            // Один пользователь — одна корзина (связь "один к одному").
+            // Внешний ключ — Cart.UserId. При удалении пользователя удаляется и корзина.
+            modelBuilder.Entity<User>()
+                .HasOne(u => u.Cart)
+                .WithOne(c => c.User)
+                .HasForeignKey<Cart>(c => c.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // В одной корзине одна книга встречается только один раз —
+            // если её добавляют повторно, увеличиваем Quantity существующей позиции.
+            modelBuilder.Entity<CartItem>()
+                .HasIndex(i => new { i.CartId, i.BookId })
+                .IsUnique();
+
+            // Номер заказа уникален
+            modelBuilder.Entity<Order>()
+                .HasIndex(o => o.Number)
+                .IsUnique();
+
+            // Ограничения длины строк: без них EF Core создаёт nvarchar(max),
+            // а по nvarchar(max) нельзя построить индекс (Email, Number).
+            modelBuilder.Entity<User>().Property(u => u.Email).HasMaxLength(200);
+            modelBuilder.Entity<User>().Property(u => u.Name).HasMaxLength(100);
+            modelBuilder.Entity<User>().Property(u => u.Role).HasMaxLength(20);
+            modelBuilder.Entity<Order>().Property(o => o.Number).HasMaxLength(30);
+            modelBuilder.Entity<Order>().Property(o => o.Status).HasMaxLength(20);
+            modelBuilder.Entity<Order>().Property(o => o.CardLast4).HasMaxLength(4);
+
+
             // Связи Book с Author, Genre и Publisher.
             //
             // Один автор / жанр / издательство → много книг.

@@ -7,6 +7,7 @@ namespace BookWebClient.Pages.Cart
 {
     // Корзина: /Cart
     // Доступна и гостям — войти нужно только при оформлении заказа.
+    // Где хранится корзина (сессия или API), решает SwitchableCartService.
     public class IndexModel : PageModel
     {
         private readonly ICartService _cart;
@@ -20,30 +21,31 @@ namespace BookWebClient.Pages.Cart
         public decimal Total { get; private set; }
         public int Count { get; private set; }
 
-        public void OnGet()
+        public async Task OnGetAsync(CancellationToken ct)
         {
-            Items = _cart.GetItems();
+            Items = await _cart.GetItemsAsync(ct);
             Total = Items.Sum(i => i.Total);
             Count = Items.Sum(i => i.Quantity);
         }
 
-        // Кнопки "−" / "+" и поле количества отправляют новое значение quantity
-        public IActionResult OnPostUpdate(int bookId, int quantity)
+        // Кнопки "−" / "+" отправляют новое значение quantity
+        public async Task<IActionResult> OnPostUpdateAsync(int bookId, int quantity, CancellationToken ct)
         {
-            _cart.SetQuantity(bookId, quantity);
+            var error = await _cart.SetQuantityAsync(bookId, quantity, ct);
+            if (error != null) TempData["Error"] = error;
             return RedirectToPage();
         }
 
-        public IActionResult OnPostRemove(int bookId)
+        public async Task<IActionResult> OnPostRemoveAsync(int bookId, CancellationToken ct)
         {
-            _cart.Remove(bookId);
+            await _cart.RemoveAsync(bookId, ct);
             TempData["Success"] = "Книгу прибрано з кошика.";
             return RedirectToPage();
         }
 
-        public IActionResult OnPostClear()
+        public async Task<IActionResult> OnPostClearAsync(CancellationToken ct)
         {
-            _cart.Clear();
+            await _cart.ClearAsync(ct);
             TempData["Success"] = "Кошик очищено.";
             return RedirectToPage();
         }

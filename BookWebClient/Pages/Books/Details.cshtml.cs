@@ -36,7 +36,7 @@ namespace BookWebClient.Pages.Books
 
             Book = book;
             SameAuthor = catalog.Books.Where(b => b.AuthorId == book.AuthorId && b.Id != book.Id).Take(4).ToList();
-            InCart = _cart.GetItems().FirstOrDefault(i => i.BookId == id)?.Quantity ?? 0;
+            InCart = (await _cart.GetItemsAsync(ct)).FirstOrDefault(i => i.BookId == id)?.Quantity ?? 0;
             return Page();
         }
 
@@ -47,8 +47,11 @@ namespace BookWebClient.Pages.Books
 
             if (book.InStock)
             {
-                _cart.Add(book, Math.Max(1, quantity));
-                TempData["Success"] = $"«{book.Title}» додано до кошика.";
+                var error = await _cart.AddAsync(book, Math.Max(1, quantity), ct);
+                if (error == null)
+                    TempData["Success"] = $"«{book.Title}» додано до кошика.";
+                else
+                    TempData["Error"] = error;
             }
             else
             {

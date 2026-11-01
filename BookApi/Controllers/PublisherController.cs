@@ -1,6 +1,7 @@
 ﻿using Bookstore.Api.Models;
 using Bookstore.Api.Models.DTO;
 using Bookstore.Api.Services.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Bookstore.Api.Controllers
@@ -48,6 +49,7 @@ namespace Bookstore.Api.Controllers
 
         // POST /api/Publisher
         // Создаёт новое издательство.
+        [Authorize(Roles = UserRoles.Admin)]   // изменять каталог может только администратор
         [HttpPost]
         public async Task<IActionResult> CreateAsync([FromBody] PublisherDTO newPublisher)
         {
@@ -63,6 +65,7 @@ namespace Bookstore.Api.Controllers
         }
 
         // DELETE /api/Publisher/{id}
+        [Authorize(Roles = UserRoles.Admin)]   // изменять каталог может только администратор
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
@@ -79,6 +82,7 @@ namespace Bookstore.Api.Controllers
 
         // PUT /api/Publisher/{id}
         // Полное обновление издательства.
+        [Authorize(Roles = UserRoles.Admin)]   // изменять каталог может только администратор
         [HttpPut("{id}")]
         public async Task<IActionResult> PutAsync(
             int id,
@@ -101,6 +105,7 @@ namespace Bookstore.Api.Controllers
         // PATCH /api/Publisher/{id}
         // Частичное обновление: меняем только переданные поля
         // (в PublisherPatchDTO все поля необязательные).
+        [Authorize(Roles = UserRoles.Admin)]   // изменять каталог может только администратор
         [HttpPatch("{id}")]
         public async Task<IActionResult> PatchAsync(
             int id,

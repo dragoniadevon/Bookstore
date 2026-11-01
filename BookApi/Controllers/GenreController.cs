@@ -1,6 +1,7 @@
 ﻿using Bookstore.Api.Models;
 using Bookstore.Api.Models.DTO;
 using Bookstore.Api.Services.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Bookstore.Api.Controllers
@@ -42,6 +43,7 @@ namespace Bookstore.Api.Controllers
         }
 
         // POST /api/Genre - создание жанра, 201 Created.
+        [Authorize(Roles = UserRoles.Admin)]   // изменять каталог может только администратор
         [HttpPost]
         public async Task<IActionResult> CreateAsync([FromBody] GenreDTO newGenre)
         {
@@ -55,6 +57,7 @@ namespace Bookstore.Api.Controllers
         }
 
         // PUT /api/Genre/{id} - полное обновление.
+        [Authorize(Roles = UserRoles.Admin)]   // изменять каталог может только администратор
         [HttpPut("{id}")]
         public async Task<IActionResult> PutAsync(int id, [FromBody] GenreDTO genre)
         {
@@ -71,6 +74,7 @@ namespace Bookstore.Api.Controllers
         }
 
         // PATCH /api/Genre/{id} - частичное обновление (поля GenrePatchDTO необязательные).
+        [Authorize(Roles = UserRoles.Admin)]   // изменять каталог может только администратор
         [HttpPatch("{id}")]
         public async Task<IActionResult> PatchAsync(int id, [FromBody] GenrePatchDTO genre)
         {
@@ -84,6 +88,7 @@ namespace Bookstore.Api.Controllers
         }
 
         // DELETE /api/Genre/{id} - 204, 409 (у жанра есть книги) или 404.
+        [Authorize(Roles = UserRoles.Admin)]   // изменять каталог может только администратор
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {

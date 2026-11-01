@@ -21,5 +21,9 @@
         // Имя HttpClient для обращений к API.
         // const — значение задаётся один раз при компиляции и не может измениться.
         public const string ApiClientName = "BookStoreApi";
+
+        // Название claim в cookie входа, в котором хранится JWT-токен от API.
+        // Cookie зашифрована ASP.NET Core, поэтому прочитать токен из браузера нельзя.
+        public const string AccessTokenClaim = "access_token";
     }
 }

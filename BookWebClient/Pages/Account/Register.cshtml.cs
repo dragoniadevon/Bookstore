@@ -1,3 +1,4 @@
+using Bookstore.WebClient.Service;
 using Bookstore.WebClient.Service.Interface;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -8,11 +9,13 @@ namespace BookWebClient.Pages.Account
     // Регистрация: /Account/Register
     public class RegisterModel : PageModel
     {
-        private readonly IUserStore _users;
+        private readonly IAuthService _auth;
+        private readonly CartMerger _cartMerger;
 
-        public RegisterModel(IUserStore users)
+        public RegisterModel(IAuthService auth, CartMerger cartMerger)
         {
-            _users = users;
+            _auth = auth;
+            _cartMerger = cartMerger;
         }
 
         [BindProperty]
@@ -25,21 +28,22 @@ namespace BookWebClient.Pages.Account
         {
         }
 
-        public async Task<IActionResult> OnPostAsync()
+        public async Task<IActionResult> OnPostAsync(CancellationToken ct)
         {
             if (!ModelState.IsValid) return Page();
 
-            var user = _users.Register(Input.Name, Input.Email, Input.Password);
-            if (user == null)
+            var result = await _auth.RegisterAsync(Input.Name, Input.Email, Input.Password, ct);
+            if (!result.Success)
             {
                 // nameof(...) — имя поля без опечаток; ошибка выведется под полем Email
-                ModelState.AddModelError($"{nameof(Input)}.{nameof(Input.Email)}", "Користувач із таким email уже зареєстрований.");
+                ModelState.AddModelError($"{nameof(Input)}.{nameof(Input.Email)}", result.Error!);
                 return Page();
             }
 
             // После регистрации сразу входим, чтобы не заставлять вводить данные ещё раз
-            await SignInHelper.SignInAsync(HttpContext, user, rememberMe: true);
-            TempData["Success"] = $"Реєстрація пройшла успішно. Ласкаво просимо, {user.Name}!";
+            await SignInHelper.SignInAsync(HttpContext, result, rememberMe: true);
+            await _cartMerger.MergeGuestCartAsync(result, ct);
+            TempData["Success"] = $"Реєстрація пройшла успішно. Ласкаво просимо, {result.User!.Name}!";
             return LocalRedirect(Url.IsLocalUrl(ReturnUrl) ? ReturnUrl! : "/");
         }
     }

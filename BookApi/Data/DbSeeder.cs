@@ -1,4 +1,6 @@
+using Bookstore.Api.Models;
 using Bookstore.Api.Models.Entity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bookstore.Api.Data
@@ -78,6 +80,33 @@ namespace Bookstore.Api.Data
                     "Поетичні оповідання про колонізацію Марса."));
 
             // Один SaveChangesAsync сохраняет всё сразу (в одной транзакции).
+            await db.SaveChangesAsync();
+        }
+
+        // Добавляет демо-пользователей, если пользователей в базе ещё нет:
+        //   demo@bookstore.local  / demo123  — покупатель
+        //   admin@bookstore.local / admin123 — администратор
+        // Пароли сохраняются только в виде хеша.
+        public static async Task SeedDemoUsersAsync(AppDbContext db)
+        {
+            if (await db.Users.AnyAsync())
+            {
+                return;
+            }
+
+            var hasher = new PasswordHasher<User>();
+
+            User NewUser(string name, string email, string password, string role)
+            {
+                var user = new User { Name = name, Email = email, Role = role };
+                user.PasswordHash = hasher.HashPassword(user, password);
+                return user;
+            }
+
+            db.Users.AddRange(
+                NewUser("Демо Покупець", "demo@bookstore.local", "demo123", UserRoles.Customer),
+                NewUser("Адміністратор", "admin@bookstore.local", "admin123", UserRoles.Admin));
+
             await db.SaveChangesAsync();
         }
 

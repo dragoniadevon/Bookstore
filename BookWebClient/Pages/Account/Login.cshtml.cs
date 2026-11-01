@@ -1,3 +1,4 @@
+using Bookstore.WebClient.Service;
 using Bookstore.WebClient.Service.Interface;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -8,11 +9,13 @@ namespace BookWebClient.Pages.Account
     // Вход: /Account/Login
     public class LoginModel : PageModel
     {
-        private readonly IUserStore _users;
+        private readonly IAuthService _auth;
+        private readonly CartMerger _cartMerger;
 
-        public LoginModel(IUserStore users)
+        public LoginModel(IAuthService auth, CartMerger cartMerger)
         {
-            _users = users;
+            _auth = auth;
+            _cartMerger = cartMerger;
         }
 
         [BindProperty]
@@ -27,21 +30,27 @@ namespace BookWebClient.Pages.Account
         {
         }
 
-        public async Task<IActionResult> OnPostAsync()
+        public async Task<IActionResult> OnPostAsync(CancellationToken ct)
         {
             if (!ModelState.IsValid) return Page();
 
-            var user = _users.ValidateCredentials(Input.Email, Input.Password);
-            if (user == null)
+            // В режиме API пароль проверяет Bookstore.Api и возвращает JWT-токен,
+            // в мок-режиме — хранилище пользователей в памяти.
+            var result = await _auth.LoginAsync(Input.Email, Input.Password, ct);
+            if (!result.Success)
             {
                 // Не уточняем, что именно неверно (email или пароль) —
                 // иначе злоумышленник узнает, какие email зарегистрированы.
-                ModelState.AddModelError(string.Empty, "Неправильний email або пароль.");
+                ModelState.AddModelError(string.Empty, result.Error!);
                 return Page();
             }
 
-            await SignInHelper.SignInAsync(HttpContext, user, Input.RememberMe);
-            TempData["Success"] = $"Ласкаво просимо, {user.Name}!";
+            await SignInHelper.SignInAsync(HttpContext, result, Input.RememberMe);
+
+            // Книги, которые гость положил в корзину до входа, переносим в его корзину в API
+            await _cartMerger.MergeGuestCartAsync(result, ct);
+
+            TempData["Success"] = $"Ласкаво просимо, {result.User!.Name}!";
             return LocalRedirect(Url.IsLocalUrl(ReturnUrl) ? ReturnUrl! : "/");
         }
     }
